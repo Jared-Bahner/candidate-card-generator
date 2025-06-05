@@ -28,13 +28,26 @@ export async function extractTextFromPDF(pdfBuffer) {
       fullText += pageText + '\n\n';
     }
 
-    // Use OpenAI to clean and structure the text
+    // Use OpenAI to analyze the text and extract structured information
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
         {
           role: "system",
-          content: "You are a professional resume parser. Clean and structure the following text from a resume, maintaining its original format and content."
+          content: `You are a professional resume parser. Extract the following information from the resume in a structured JSON format:
+          - name (full name)
+          - position (current or most recent job title)
+          - email
+          - phone
+          - address (full address if available)
+          - linkedin (LinkedIn URL if found)
+          - resumeLink (any other portfolio or resume links)
+          - coreSkills (array of 3 most important technical skills)
+          - highlights (array of 5-7 detailed achievements/experiences, each 2-3 sentences long, focusing on quantifiable results and impact)
+          
+          Format the response as a valid JSON object with these exact field names. Ensure all fields are strings or arrays of strings.
+          For the highlights, include specific metrics, numbers, and outcomes where possible.
+          If a field is not found, use an empty string or empty array as appropriate.`
         },
         {
           role: "user",
@@ -42,10 +55,11 @@ export async function extractTextFromPDF(pdfBuffer) {
         }
       ],
       temperature: 0,
-      max_tokens: 4096
+      max_tokens: 2000,
+      response_format: { type: "json_object" }
     });
 
-    return response.choices[0].message.content;
+    return JSON.parse(response.choices[0].message.content);
   } catch (error) {
     console.error('Error processing PDF:', error);
     if (error.message && error.message.includes('has been deprecated')) {
@@ -73,7 +87,7 @@ export async function generateHighlightsFromResume(resumeText) {
       messages: [
         {
           role: "system",
-          content: "You are a professional resume analyzer. Extract and generate 5-7 key highlights from the resume text provided. Focus on the most impressive achievements, skills, and experiences. Format each highlight as a concise, impactful bullet point."
+          content: "You are a professional resume analyzer. Extract and generate 5-7 key highlights from the resume text provided. Each highlight should be 2-3 sentences long, focusing on quantifiable achievements, specific technologies used, and business impact. Include metrics, numbers, and outcomes where possible. Format each highlight as a detailed, impactful paragraph that demonstrates the candidate's expertise and results."
         },
         {
           role: "user",
@@ -81,7 +95,7 @@ export async function generateHighlightsFromResume(resumeText) {
         }
       ],
       temperature: 0.7,
-      max_tokens: 500
+      max_tokens: 1000
     });
 
     // Extract highlights from the response

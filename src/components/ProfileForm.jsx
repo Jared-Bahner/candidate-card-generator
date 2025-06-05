@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Upload, User, Star, FileText, Loader, Wrench } from 'lucide-react';
+import { Upload, User, Star, FileText, Loader, Wrench, Briefcase } from 'lucide-react';
 import { extractTextFromPDF, generateHighlightsFromResume } from '../services/aiService';
 
 const FormSection = ({ children, className = '' }) => (
@@ -38,16 +38,17 @@ const FormTextArea = ({ value, onChange, placeholder, rows = 2 }) => (
 
 const HighlightInput = ({ value, onChange, onRemove, canRemove }) => (
   <div className="flex gap-2 mb-2">
-    <FormInput
+    <FormTextArea
       value={value}
       onChange={onChange}
       placeholder="Enter a key highlight"
       className="flex-1"
+      rows={3}
     />
     {canRemove && (
       <button
         onClick={onRemove}
-        className="px-2 py-1 text-red-500 hover:bg-red-50 rounded-md transition-colors"
+        className="px-2 py-1 text-red-500 hover:bg-red-50 rounded-md transition-colors h-fit"
         title="Remove highlight"
       >
         ×
@@ -69,7 +70,7 @@ const SuggestedHighlight = ({ highlight, onAdd }) => (
 );
 
 const ResumeUploader = ({ onUpload, isProcessing, error }) => (
-  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
     <input
       type="file"
       accept=".pdf"
@@ -79,11 +80,11 @@ const ResumeUploader = ({ onUpload, isProcessing, error }) => (
       disabled={isProcessing}
     />
     <label htmlFor="resume-upload" className="cursor-pointer">
-      <FileText className="mx-auto mb-2 text-gray-400" size={32} />
+      <FileText className="mx-auto mb-3 text-gray-400" size={48} />
       <p className="text-sm text-gray-500">
         {isProcessing ? (
           <span className="flex items-center justify-center">
-            <Loader className="animate-spin mr-2" size={16} />
+            <Loader className="animate-spin mr-2" size={20} />
             Processing resume...
           </span>
         ) : (
@@ -92,6 +93,41 @@ const ResumeUploader = ({ onUpload, isProcessing, error }) => (
       </p>
     </label>
     {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+  </div>
+);
+
+const PlacementTypeToggle = ({ value, onChange }) => (
+  <div className="flex gap-4 items-center">
+    <button
+      onClick={() => onChange('Contractor')}
+      className={`px-4 py-2 rounded-full transition-colors ${
+        value === 'Contractor'
+          ? 'bg-blue-500 text-white'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      Contractor
+    </button>
+    <button
+      onClick={() => onChange('Direct Placement')}
+      className={`px-4 py-2 rounded-full transition-colors ${
+        value === 'Direct Placement'
+          ? 'bg-blue-500 text-white'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      Direct Placement
+    </button>
+    <button
+      onClick={() => onChange('Contract to Hire')}
+      className={`px-4 py-2 rounded-full transition-colors ${
+        value === 'Contract to Hire'
+          ? 'bg-blue-500 text-white'
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      }`}
+    >
+      Contract to Hire
+    </button>
   </div>
 );
 
@@ -127,14 +163,30 @@ export default function ProfileForm({
 
     try {
       const buffer = await file.arrayBuffer();
-      const text = await extractTextFromPDF(buffer);
+      const parsedData = await extractTextFromPDF(buffer);
       
-      if (!text?.trim()) {
-        throw new Error('No text could be extracted from the PDF');
+      // Autofill the form with parsed data
+      onInputChange('name', parsedData.name || '');
+      onInputChange('position', parsedData.position || '');
+      onInputChange('email', parsedData.email || '');
+      onInputChange('phone', parsedData.phone || '');
+      onInputChange('address', parsedData.address || '');
+      onInputChange('linkedin', parsedData.linkedin || '');
+      onInputChange('resumeLink', parsedData.resumeLink || '');
+      
+      // Update core skills if available
+      if (parsedData.coreSkills?.length > 0) {
+        const skills = [...parsedData.coreSkills];
+        while (skills.length < 3) skills.push('');
+        onInputChange('coreSkills', skills);
       }
 
-      const highlights = await generateHighlightsFromResume(text);
-      setSuggestedHighlights(highlights);
+      // Update highlights if available
+      if (parsedData.highlights?.length > 0) {
+        onInputChange('highlights', parsedData.highlights);
+      }
+
+      setSuggestedHighlights([]); // Clear suggested highlights since we're using the parsed ones
     } catch (err) {
       console.error('Detailed error in handleResumeUpload:', err);
       setError(`Failed to process resume: ${err.message}`);
@@ -154,6 +206,28 @@ export default function ProfileForm({
       <h2 className="text-2xl font-semibold text-gray-700 mb-6">
         Candidate Information
       </h2>
+
+      {/* Resume Upload for AI Analysis */}
+      <FormSection className="mb-6">
+        <FormLabel icon={FileText}>Upload Resume for AI Analysis</FormLabel>
+        <div className="mb-2 text-sm text-gray-600">
+          Upload a PDF resume to automatically fill out the form
+        </div>
+        <ResumeUploader
+          onUpload={handleResumeUpload}
+          isProcessing={isProcessing}
+          error={error}
+        />
+      </FormSection>
+
+      {/* Placement Type Toggle */}
+      <FormSection className="mb-6">
+        <FormLabel icon={Briefcase}>Placement Type</FormLabel>
+        <PlacementTypeToggle
+          value={formData.placementType}
+          onChange={(value) => onInputChange('placementType', value)}
+        />
+      </FormSection>
 
       {/* Profile Image Upload */}
       <FormSection className="mb-6">
@@ -175,7 +249,7 @@ export default function ProfileForm({
 
       {/* Basic Information */}
       <FormSection>
-        <FormLabel>Full Name</FormLabel>
+        <FormLabel icon={User}>Full Name</FormLabel>
         <FormInput
           value={formData.name || ''}
           onChange={(e) => onInputChange('name', e.target.value)}
@@ -193,12 +267,12 @@ export default function ProfileForm({
       </FormSection>
 
       <FormSection>
-        <FormLabel>LinkedIn Profile Link</FormLabel>
+        <FormLabel>LinkedIn Profile</FormLabel>
         <FormInput
           type="url"
           value={formData.linkedin || ''}
           onChange={(e) => onInputChange('linkedin', e.target.value)}
-          placeholder="Enter LinkedIn profile URL"
+          placeholder="Enter LinkedIn URL"
         />
       </FormSection>
 
@@ -213,11 +287,21 @@ export default function ProfileForm({
       </FormSection>
 
       <FormSection>
-        <FormLabel>Address</FormLabel>
-        <FormTextArea
+        <FormLabel>Portfolio Link</FormLabel>
+        <FormInput
+          type="url"
+          value={formData.portfolioLink || ''}
+          onChange={(e) => onInputChange('portfolioLink', e.target.value)}
+          placeholder="Enter portfolio URL (optional)"
+        />
+      </FormSection>
+
+      <FormSection>
+        <FormLabel>Location</FormLabel>
+        <FormInput
           value={formData.address}
           onChange={(e) => onInputChange('address', e.target.value)}
-          placeholder="Enter candidate address"
+          placeholder="Enter candidate location"
         />
       </FormSection>
 
@@ -254,16 +338,6 @@ export default function ProfileForm({
             />
           ))}
         </div>
-      </FormSection>
-
-      {/* Resume Upload for AI Analysis */}
-      <FormSection className="mb-6">
-        <FormLabel>Upload Resume for AI Analysis</FormLabel>
-        <ResumeUploader
-          onUpload={handleResumeUpload}
-          isProcessing={isProcessing}
-          error={error}
-        />
       </FormSection>
 
       {/* Key Highlights */}
@@ -313,12 +387,14 @@ ProfileForm.propTypes = {
     position: PropTypes.string,
     linkedin: PropTypes.string,
     resumeLink: PropTypes.string,
+    portfolioLink: PropTypes.string,
     address: PropTypes.string,
     phone: PropTypes.string,
     email: PropTypes.string,
     highlights: PropTypes.arrayOf(PropTypes.string).isRequired,
     profileImage: PropTypes.string,
-    coreSkills: PropTypes.arrayOf(PropTypes.string)
+    coreSkills: PropTypes.arrayOf(PropTypes.string),
+    placementType: PropTypes.oneOf(['Contractor', 'Direct Placement', 'Contract to Hire'])
   }).isRequired,
   onInputChange: PropTypes.func.isRequired,
   onHighlightChange: PropTypes.func.isRequired,
@@ -368,4 +444,9 @@ ResumeUploader.propTypes = {
   onUpload: PropTypes.func.isRequired,
   isProcessing: PropTypes.bool.isRequired,
   error: PropTypes.string
+};
+
+PlacementTypeToggle.propTypes = {
+  value: PropTypes.oneOf(['Contractor', 'Direct Placement', 'Contract to Hire']).isRequired,
+  onChange: PropTypes.func.isRequired
 }; 

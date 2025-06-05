@@ -15,5 +15,11 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp'
     }
+  },
+  assetsInclude: ['**/*.ttf'],
+  resolve: {
+    alias: {
+      '/fonts': '/public/fonts'
+    }
   }
 })
