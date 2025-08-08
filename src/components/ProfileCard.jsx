@@ -71,7 +71,7 @@ const KeyHighlights = ({ highlights }) => {
           .filter(highlight => highlight.trim())
           .map((highlight, index) => (
             <li key={index} className="text-[24px] text-black flex items-start">
-              <span className="text-blue-400 mr-[1%] flex-shrink-0 text-[24px]">•</span>
+              <span className="text-[#2237f1] mr-[1%] flex-shrink-0 text-[24px]">•</span>
               <span>{highlight}</span>
             </li>
           ))}
@@ -81,7 +81,7 @@ const KeyHighlights = ({ highlights }) => {
 };
 
 const ContactInfo = ({ formData }) => (
-  <div className="space-y-[1.75%]">
+  <div className="space-y-[1.25%]">
     {formData.position && (
       <div className="flex items-center text-[32px] text-white">
         <span className="text-white font-bold font-space-grotesk mr-[2%]">Position:</span>
@@ -116,7 +116,9 @@ const ContactInfo = ({ formData }) => (
           style={{
             color: '#2DD4BF',
             textDecoration: 'underline',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            textDecorationThickness: '2px',
+            textUnderlineOffset: '2px'
           }}
           className="hover:bg-teal-500/10 transition-colors rounded px-1"
           data-pdf-link-url={ensureHttps(formData.linkedin)}
@@ -128,41 +130,7 @@ const ContactInfo = ({ formData }) => (
   </div>
 );
 
-const ResumeLink = ({ url }) => {
-  if (!url) return null;
-  const secureUrl = ensureHttps(url);
 
-  return (
-    <a 
-      href={secureUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block hover:opacity-80 transition-opacity"
-    >
-      <div className="h-16 w-[160px] rounded-[30px] border-2 border-white flex items-center justify-center">
-        <span className="text-white text-2xl font-medium">RESUME</span>
-      </div>
-    </a>
-  );
-};
-
-const PortfolioLink = ({ url }) => {
-  if (!url) return null;
-  const secureUrl = ensureHttps(url);
-
-  return (
-    <a 
-      href={secureUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-block hover:opacity-80 transition-opacity"
-    >
-      <div className="h-16 w-[160px] rounded-[30px] border-2 border-white flex items-center justify-center">
-        <span className="text-white text-2xl font-medium">PORTFOLIO</span>
-      </div>
-    </a>
-  );
-};
 
 const EmptyState = () => (
   <div className="text-center text-gray-400 py-[3%]">
@@ -171,12 +139,38 @@ const EmptyState = () => (
 );
 
 export default function ProfileCard({ formData }) {
+  console.log('ProfileCard rendering with formData:', formData);
+  
   const isEmpty = !formData.name && !formData.address && !formData.phone && 
                  !formData.email && !formData.highlights.some(h => h.trim()) &&
                  !formData.position && !formData.linkedin;
 
+  // Debug button rendering
+  console.log('ProfileCard Debug:', {
+    resumeLink: formData.resumeLink,
+    portfolioLink: formData.portfolioLink,
+    buttonConditions: {
+      resumeButton: !!formData.resumeLink,
+      portfolioButton: !!formData.portfolioLink
+    }
+  });
+
+  // Simple fallback if there are layout issues
+  if (!formData) {
+    console.log('ProfileCard: No formData provided, showing fallback');
+    return (
+      <div className="w-full h-full bg-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <h3 className="text-2xl mb-2">No Data</h3>
+          <p>Please fill out the form to see the preview</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('ProfileCard: Rendering main component');
   return (
-    <div className="w-full h-full bg-black relative font-primary">
+    <div className="w-full h-full bg-black relative font-primary" style={{ width: '1920px', height: '1080px' }}>
       <StatusPill type={formData.placementType} />
       <ProfileImage src={formData.profileImage} />
 
@@ -206,8 +200,34 @@ export default function ProfileCard({ formData }) {
         
         {/* Action Buttons */}
         <div className="mt-[4%] flex gap-4">
-          <ResumeLink url={formData.resumeLink} />
-          <PortfolioLink url={formData.portfolioLink} />
+          {formData.resumeLink && (
+            <a 
+              href={ensureHttps(formData.resumeLink)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src="/assets/Resume-Button.png"
+                alt="Resume"
+                className="h-16 w-[160px]"
+              />
+            </a>
+          )}
+          {formData.portfolioLink && (
+            <a 
+              href={ensureHttps(formData.portfolioLink)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block hover:opacity-80 transition-opacity"
+            >
+              <img 
+                src="/assets/Portfolio-Button.png"
+                alt="Portfolio"
+                className="h-16 w-[160px]"
+              />
+            </a>
+          )}
         </div>
 
         {isEmpty && <EmptyState />}
@@ -259,10 +279,3 @@ ContactInfo.propTypes = {
   }).isRequired
 };
 
-ResumeLink.propTypes = {
-  url: PropTypes.string
-};
-
-PortfolioLink.propTypes = {
-  url: PropTypes.string
-}; 

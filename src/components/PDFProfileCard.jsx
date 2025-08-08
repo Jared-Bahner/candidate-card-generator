@@ -7,11 +7,37 @@ import { ensureHttps } from '../utils/common';
 const TEMPLATE_WIDTH = 1920;
 const TEMPLATE_HEIGHT = 1080;
 
-// Status pill image mapping
-const STATUS_PILLS = {
+// Asset paths
+const ASSETS = {
+  logo: '/assets/mwilogo.png',
+  statusPills: {
   'Contractor': '/assets/Contractor-Status-Pill.png',
   'Direct Placement': '/assets/Direct-Placement-Status-Pill.png',
   'Contract to Hire': '/assets/Contract-to-Hire-Status-Pill.png'
+  },
+  buttons: {
+    resume: '/assets/Resume-Button.png',
+    portfolio: '/assets/Portfolio-Button.png'
+  }
+};
+
+// Helper function to get absolute URL for assets
+const getAssetUrl = (path) => {
+  if (!path) return '';
+  // Remove leading slash if present
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  // Get the base URL from the window location
+  const baseUrl = window.location.origin;
+  // For PDF rendering, we need to ensure the URL is absolute
+  return `${baseUrl}/${cleanPath}`;
+};
+
+// Helper function to get asset path for PDF
+const getPdfAssetPath = (path) => {
+  if (!path) return '';
+  // Remove leading slash if present
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  return cleanPath;
 };
 
 // Create styles
@@ -35,8 +61,10 @@ const styles = StyleSheet.create({
   },
   profileImage: {
     objectFit: 'cover',
+    objectPosition: 'center',
     width: '100%',
     height: '100%',
+    imageResolution: '300dpi',
   },
   statusPill: {
     position: 'absolute',
@@ -86,12 +114,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
   },
-  link: {
+  linkWrapper: {
+    position: 'relative',
+  },
+  linkText: {
     fontSize: 32,
     color: '#2DD4BF',
-    textDecoration: 'underline',
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
+  },
+  underline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: '#2DD4BF',
   },
   bottomContainer: {
     position: 'absolute',
@@ -148,7 +186,7 @@ const styles = StyleSheet.create({
   },
   bulletPoint: {
     fontSize: 24,
-    color: '#60A5FA',
+    color: '#2237f1',
     marginRight: '2%',
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
@@ -162,85 +200,110 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: '4%',
-    display: 'flex',
     flexDirection: 'row',
     gap: 16,
   },
-  actionButton: {
-    height: 64,
-    width: 160,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    backgroundColor: 'transparent',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontFamily: 'Space Grotesk',
-    fontWeight: 500,
-  },
+
 });
 
-// Helper function to get asset URLs
-const getAssetUrl = (path) => {
-  if (path.startsWith('http')) return path;
-  return path.startsWith('/') ? path.slice(1) : path;
-};
-
-const ActionButton = ({ text, url }) => {
-  if (!url) return null;
+// Helper function to clean and format URLs
+const formatUrl = (url) => {
+  if (!url) return '';
+  let cleanUrl = url.trim();
   
-  const secureUrl = ensureHttps(url);
-
-  return (
-    <Link src={secureUrl} style={styles.actionButton}>
-      <Text style={styles.buttonText}>{text}</Text>
-    </Link>
-  );
+  // Remove any trailing slashes
+  cleanUrl = cleanUrl.replace(/\/+$/, '');
+  
+  // Ensure URL starts with https://
+  cleanUrl = ensureHttps(cleanUrl);
+  
+  return cleanUrl;
 };
-
-const ContactInfo = ({ formData }) => (
-  <View style={styles.contactInfo}>
-    <View style={styles.contactRow}>
-      <Text style={styles.contactLabel}>Position:</Text>
-      <Text style={styles.contactValue}>{formData.position || ''}</Text>
-    </View>
-    <View style={styles.contactRow}>
-      <Text style={styles.contactLabel}>Location:</Text>
-      <Text style={styles.contactValue}>{formData.address || ''}</Text>
-    </View>
-    <View style={styles.contactRow}>
-      <Text style={styles.contactLabel}>Phone Number:</Text>
-      <Text style={styles.contactValue}>{formData.phone || ''}</Text>
-    </View>
-    <View style={styles.contactRow}>
-      <Text style={styles.contactLabel}>Email:</Text>
-      <Text style={styles.contactValue}>{formData.email || ''}</Text>
-    </View>
-    {formData.linkedin && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>LinkedIn Profile:</Text>
-        <Link src={ensureHttps(formData.linkedin)}>
-          <Text style={styles.link}>Visit Here</Text>
-        </Link>
-      </View>
-    )}
-  </View>
-);
 
 const PDFProfileCard = ({ formData }) => {
+  // Clean and format URLs at the component level
+  const resumeUrl = formData.resumeLink ? ensureHttps(formData.resumeLink) : '';
+  const portfolioUrl = formData.portfolioLink ? ensureHttps(formData.portfolioLink) : '';
+  const linkedinUrl = formData.linkedin ? ensureHttps(formData.linkedin) : '';
+
+  // Determine which buttons to render
+  const shouldRenderResumeButton = Boolean(formData.resumeLink && resumeUrl);
+  const shouldRenderPortfolioButton = Boolean(formData.portfolioLink && portfolioUrl);
+
+  // Create buttons array
+  const buttons = [];
+  if (shouldRenderResumeButton) {
+    buttons.push(
+      <Link key="resume" src={resumeUrl}>
+        <Image
+          src={getPdfAssetPath(ASSETS.buttons.resume)}
+          style={{ width: 160, height: 64 }}
+        />
+      </Link>
+    );
+  }
+  if (shouldRenderPortfolioButton) {
+    buttons.push(
+      <Link key="portfolio" src={portfolioUrl}>
+        <Image
+          src={getPdfAssetPath(ASSETS.buttons.portfolio)}
+          style={{ width: 160, height: 64 }}
+        />
+      </Link>
+    );
+  }
+
+  // Debug URL and asset handling
+  console.log('PDF Card Debug:', {
+    urls: {
+      original: {
+        resumeLink: formData.resumeLink,
+        portfolioLink: formData.portfolioLink,
+        linkedin: formData.linkedin
+      },
+      formatted: {
+        resumeUrl,
+        portfolioUrl,
+        linkedinUrl
+      }
+    },
+    buttonConditions: {
+      resumeButton: {
+        hasResumeLink: !!formData.resumeLink,
+        hasResumeUrl: !!resumeUrl,
+        shouldRender: shouldRenderResumeButton
+      },
+      portfolioButton: {
+        hasPortfolioLink: !!formData.portfolioLink,
+        hasPortfolioUrl: !!portfolioUrl,
+        shouldRender: shouldRenderPortfolioButton
+      }
+    },
+    assets: {
+      resumeButton: {
+        path: ASSETS.buttons.resume,
+        url: getAssetUrl(ASSETS.buttons.resume),
+        pdfPath: getPdfAssetPath(ASSETS.buttons.resume)
+      },
+      portfolioButton: {
+        path: ASSETS.buttons.portfolio,
+        url: getAssetUrl(ASSETS.buttons.portfolio),
+        pdfPath: getPdfAssetPath(ASSETS.buttons.portfolio)
+      }
+    }
+  });
+
   return (
     <Document>
-      <Page size={[TEMPLATE_WIDTH, TEMPLATE_HEIGHT]} style={styles.page}>
+      <Page 
+        size={[TEMPLATE_WIDTH, TEMPLATE_HEIGHT]} 
+        style={styles.page}
+        key={`${formData.resumeLink}-${formData.portfolioLink}`}
+      >
         {/* Status Pill */}
-        {formData.placementType && STATUS_PILLS[formData.placementType] && (
+        {formData.placementType && ASSETS.statusPills[formData.placementType] && (
           <Image
-            src={getAssetUrl(STATUS_PILLS[formData.placementType])}
+            src={getPdfAssetPath(ASSETS.statusPills[formData.placementType])}
             style={styles.statusPill}
           />
         )}
@@ -251,6 +314,8 @@ const PDFProfileCard = ({ formData }) => {
             <Image
               src={formData.profileImage}
               style={styles.profileImage}
+              quality={100}
+              cache={false}
             />
           )}
         </View>
@@ -259,13 +324,13 @@ const PDFProfileCard = ({ formData }) => {
         <View style={styles.contentContainer}>
           {/* Logo */}
           <Image
-            src={getAssetUrl('assets/mwilogo.png')}
+            src={getPdfAssetPath(ASSETS.logo)}
             style={styles.logo}
           />
 
           {/* Name */}
           <Text style={styles.name}>
-            {formData.name || 'Candidate Name'}
+            {formData.name && formData.name.trim() ? formData.name : 'Candidate Name'}
           </Text>
 
           {/* Contact Info */}
@@ -273,8 +338,7 @@ const PDFProfileCard = ({ formData }) => {
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            {formData.resumeLink && <ActionButton text="RESUME" url={ensureHttps(formData.resumeLink)} />}
-            {formData.portfolioLink && <ActionButton text="PORTFOLIO" url={ensureHttps(formData.portfolioLink)} />}
+            {buttons}
           </View>
         </View>
 
@@ -286,18 +350,18 @@ const PDFProfileCard = ({ formData }) => {
             <View style={styles.skillsContainer}>
               {(formData.coreSkills || ['', '', '']).map((skill, index) => (
                 <Text key={index} style={styles.skillText}>
-                  {skill || `Skill ${index + 1}`}
+                  {skill && skill.trim() ? skill : `Skill ${index + 1}`}
                 </Text>
               ))}
             </View>
           </View>
 
           {/* Key Highlights */}
-          {formData.highlights.some(h => h.trim()) && (
+          {formData.highlights && formData.highlights.some(h => h && h.trim()) && (
             <View style={styles.highlights}>
               <Text style={styles.highlightsTitle}>Key Highlights</Text>
               {formData.highlights
-                .filter(highlight => highlight.trim())
+                .filter(highlight => highlight && highlight.trim())
                 .map((highlight, index) => (
                   <View key={index} style={styles.highlightRow}>
                     <Text style={styles.bulletPoint}>•</Text>
@@ -329,9 +393,44 @@ PDFProfileCard.propTypes = {
   }).isRequired
 };
 
-ActionButton.propTypes = {
-  text: PropTypes.string.isRequired,
-  url: PropTypes.string
-};
+const ContactInfo = ({ formData }) => (
+  <View style={styles.contactInfo}>
+    {formData.position && (
+      <View style={styles.contactRow}>
+        <Text style={styles.contactLabel}>Position:</Text>
+        <Text style={styles.contactValue}>{formData.position}</Text>
+      </View>
+    )}
+    {formData.address && (
+      <View style={styles.contactRow}>
+        <Text style={styles.contactLabel}>Location:</Text>
+        <Text style={styles.contactValue}>{formData.address}</Text>
+      </View>
+    )}
+    {formData.phone && (
+      <View style={styles.contactRow}>
+        <Text style={styles.contactLabel}>Phone Number:</Text>
+        <Text style={styles.contactValue}>{formData.phone}</Text>
+      </View>
+    )}
+    {formData.email && (
+      <View style={styles.contactRow}>
+        <Text style={styles.contactLabel}>Email:</Text>
+        <Text style={styles.contactValue}>{formData.email}</Text>
+      </View>
+    )}
+    {formData.linkedin && (
+      <View style={styles.contactRow}>
+        <Text style={styles.contactLabel}>LinkedIn Profile:</Text>
+        <Link src={formatUrl(formData.linkedin)}>
+          <View style={styles.linkWrapper}>
+            <Text style={styles.linkText}>Visit Here</Text>
+            <View style={styles.underline} />
+          </View>
+        </Link>
+      </View>
+    )}
+  </View>
+);
 
 export default PDFProfileCard; 

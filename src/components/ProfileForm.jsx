@@ -1,42 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, User, Star, FileText, Loader, Wrench, Briefcase } from 'lucide-react';
 import { extractTextFromPDF, generateHighlightsFromResume } from '../services/aiService';
 
-const FormSection = ({ children, className = '' }) => (
+// Memoized form components for better performance
+const FormSection = React.memo(({ children, className = '' }) => (
   <div className={`mb-4 ${className}`}>
     {children}
   </div>
-);
+));
 
-const FormLabel = ({ children, icon: Icon }) => (
+const FormLabel = React.memo(({ children, icon: Icon }) => (
   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
     {Icon && <Icon className="mr-2" size={16} />}
     {children}
   </label>
-);
+));
 
-const FormInput = ({ type = 'text', value, onChange, placeholder, className = '' }) => (
+const FormInput = React.memo(({ type = 'text', value, onChange, placeholder, className = '' }) => (
   <input
     type={type}
-    value={value}
+    value={value || ''}
     onChange={onChange}
-    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2237f1] ${className}`}
     placeholder={placeholder}
   />
-);
+));
 
-const FormTextArea = ({ value, onChange, placeholder, rows = 2 }) => (
+const FormTextArea = React.memo(({ value, onChange, placeholder, rows = 2 }) => (
   <textarea
-    value={value}
+    value={value || ''}
     onChange={onChange}
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2237f1]"
     rows={rows}
     placeholder={placeholder}
   />
-);
+));
 
-const HighlightInput = ({ value, onChange, onRemove, canRemove }) => (
+const HighlightInput = React.memo(({ value, onChange, onRemove, canRemove }) => (
   <div className="flex gap-2 mb-2">
     <FormTextArea
       value={value}
@@ -50,27 +51,29 @@ const HighlightInput = ({ value, onChange, onRemove, canRemove }) => (
         onClick={onRemove}
         className="px-2 py-1 text-red-500 hover:bg-red-50 rounded-md transition-colors h-fit"
         title="Remove highlight"
+        type="button"
       >
         ×
       </button>
     )}
   </div>
-);
+));
 
-const SuggestedHighlight = ({ highlight, onAdd }) => (
-  <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md mb-2">
+const SuggestedHighlight = React.memo(({ highlight, onAdd }) => (
+  <div className="flex items-center justify-between p-2 bg-[#e8ecff] rounded-md mb-2">
     <span className="text-sm text-gray-700">{highlight}</span>
     <button
       onClick={() => onAdd(highlight)}
-      className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+      className="text-[#2237f1] hover:text-[#1a2bd8] text-sm font-medium"
+      type="button"
     >
       Add
     </button>
   </div>
-);
+));
 
-const ResumeUploader = ({ onUpload, isProcessing, error }) => (
-  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+const ResumeUploader = React.memo(({ onUpload, isProcessing, error }) => (
+  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#2237f1] transition-colors">
     <input
       type="file"
       accept=".pdf"
@@ -78,12 +81,13 @@ const ResumeUploader = ({ onUpload, isProcessing, error }) => (
       className="hidden"
       id="resume-upload"
       disabled={isProcessing}
+      data-testid="resume-upload"
     />
     <label htmlFor="resume-upload" className="cursor-pointer">
       <FileText className="mx-auto mb-3 text-gray-400" size={48} />
       <p className="text-sm text-gray-500">
         {isProcessing ? (
-          <span className="flex items-center justify-center">
+          <span className="flex items-center justify-center" data-testid="processing-status">
             <Loader className="animate-spin mr-2" size={20} />
             Processing resume...
           </span>
@@ -92,44 +96,53 @@ const ResumeUploader = ({ onUpload, isProcessing, error }) => (
         )}
       </p>
     </label>
-    {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+    {error && <p className="text-red-500 text-sm mt-2" data-testid="upload-error">{error}</p>}
   </div>
-);
+));
 
-const PlacementTypeToggle = ({ value, onChange }) => (
+const PlacementTypeToggle = React.memo(({ value, onChange }) => (
   <div className="flex gap-4 items-center">
-    <button
-      onClick={() => onChange('Contractor')}
-      className={`px-4 py-2 rounded-full transition-colors ${
-        value === 'Contractor'
-          ? 'bg-blue-500 text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-      }`}
-    >
-      Contractor
-    </button>
-    <button
-      onClick={() => onChange('Direct Placement')}
-      className={`px-4 py-2 rounded-full transition-colors ${
-        value === 'Direct Placement'
-          ? 'bg-blue-500 text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-      }`}
-    >
-      Direct Placement
-    </button>
-    <button
-      onClick={() => onChange('Contract to Hire')}
-      className={`px-4 py-2 rounded-full transition-colors ${
-        value === 'Contract to Hire'
-          ? 'bg-blue-500 text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-      }`}
-    >
-      Contract to Hire
-    </button>
+    {['Contractor', 'Direct Placement', 'Contract to Hire'].map((type) => (
+      <button
+        key={type}
+        onClick={() => onChange(type)}
+        className={`px-4 py-2 rounded-full transition-colors ${
+          value === type
+            ? 'bg-[#2237f1] text-white'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }`}
+        type="button"
+      >
+        {type}
+      </button>
+    ))}
   </div>
-);
+));
+
+// Custom hook for form state management
+const useFormState = (initialFormData, onInputChange) => {
+  const [localState, setLocalState] = useState({
+    isProcessing: false,
+    suggestedHighlights: [],
+    error: '',
+    highlightContext: '',
+    uploadedResumeText: ''
+  });
+
+  const updateLocalState = useCallback((updates) => {
+    setLocalState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleInputChange = useCallback((field, value) => {
+    onInputChange(field, value);
+  }, [onInputChange]);
+
+  return {
+    ...localState,
+    updateLocalState,
+    handleInputChange
+  };
+};
 
 export default function ProfileForm({ 
   formData, 
@@ -137,72 +150,144 @@ export default function ProfileForm({
   onHighlightChange, 
   onAddHighlight, 
   onRemoveHighlight, 
-  onImageUpload 
+  onImageUpload
 }) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [suggestedHighlights, setSuggestedHighlights] = useState([]);
-  const [error, setError] = useState('');
+  const {
+    isProcessing,
+    suggestedHighlights,
+    error,
+    highlightContext,
+    uploadedResumeText,
+    updateLocalState,
+    handleInputChange
+  } = useFormState(formData, onInputChange);
 
-  const handleCoreSkillChange = (index, value) => {
-    const newCoreSkills = [...(formData.coreSkills || ['', '', ''])];
+  // Memoized values for better performance
+  const coreSkills = useMemo(() => {
+    return formData.coreSkills || ['', '', ''];
+  }, [formData.coreSkills]);
+
+  const highlights = useMemo(() => {
+    return formData.highlights || [''];
+  }, [formData.highlights]);
+
+  const handleCoreSkillChange = useCallback((index, value) => {
+    const newCoreSkills = [...coreSkills];
     newCoreSkills[index] = value;
-    onInputChange('coreSkills', newCoreSkills);
-  };
+    handleInputChange('coreSkills', newCoreSkills);
+  }, [coreSkills, handleInputChange]);
 
-  const handleResumeUpload = async (event) => {
+  const handleResumeUpload = useCallback(async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (file.type !== 'application/pdf') {
-      setError('Please upload a PDF file');
+      updateLocalState({ error: 'Please upload a PDF file' });
       return;
     }
 
-    setIsProcessing(true);
-    setError('');
+    updateLocalState({ isProcessing: true, error: '' });
 
     try {
       const buffer = await file.arrayBuffer();
-      const parsedData = await extractTextFromPDF(buffer);
+      const result = await extractTextFromPDF(buffer);
       
-      // Autofill the form with parsed data
-      onInputChange('name', parsedData.name || '');
-      onInputChange('position', parsedData.position || '');
-      onInputChange('email', parsedData.email || '');
-      onInputChange('phone', parsedData.phone || '');
-      onInputChange('address', parsedData.address || '');
-      onInputChange('linkedin', parsedData.linkedin || '');
-      onInputChange('resumeLink', parsedData.resumeLink || '');
+      // Extract parsed data and full text
+      const { fullText, ...parsedData } = result;
+      
+      // Batch update form data for better performance
+      const updates = {
+        name: parsedData.name || '',
+        position: parsedData.position || '',
+        email: parsedData.email || '',
+        phone: parsedData.phone || '',
+        address: parsedData.address || '',
+        linkedin: parsedData.linkedin || '',
+        resumeLink: parsedData.resumeLink || '',
+        portfolioLink: parsedData.portfolioLink || ''
+      };
+
+      // Apply all updates
+      Object.entries(updates).forEach(([field, value]) => {
+        handleInputChange(field, value);
+      });
       
       // Update core skills if available
       if (parsedData.coreSkills?.length > 0) {
         const skills = [...parsedData.coreSkills];
         while (skills.length < 3) skills.push('');
-        onInputChange('coreSkills', skills);
+        handleInputChange('coreSkills', skills);
       }
 
       // Update highlights if available
       if (parsedData.highlights?.length > 0) {
-        onInputChange('highlights', parsedData.highlights);
+        handleInputChange('highlights', parsedData.highlights);
       }
 
-      setSuggestedHighlights([]); // Clear suggested highlights since we're using the parsed ones
+      updateLocalState({ 
+        suggestedHighlights: [], // Clear suggested highlights
+        uploadedResumeText: fullText 
+      });
     } catch (err) {
       console.error('Detailed error in handleResumeUpload:', err);
-      setError(`Failed to process resume: ${err.message}`);
+      updateLocalState({ 
+        error: `Failed to process resume: ${err.message}` 
+      });
     } finally {
-      setIsProcessing(false);
+      updateLocalState({ isProcessing: false });
     }
-  };
+  }, [updateLocalState, handleInputChange]);
 
-  const addSuggestedHighlight = (highlight) => {
+  const addSuggestedHighlight = useCallback((highlight) => {
     onAddHighlight();
-    onHighlightChange(formData.highlights.length, highlight);
-    setSuggestedHighlights(prev => prev.filter(h => h !== highlight));
-  };
+    onHighlightChange(highlights.length, highlight);
+    updateLocalState({
+      suggestedHighlights: suggestedHighlights.filter(h => h !== highlight)
+    });
+  }, [onAddHighlight, onHighlightChange, highlights.length, suggestedHighlights, updateLocalState]);
+
+  const generateContextHighlights = useCallback(async () => {
+    if (!highlightContext.trim()) {
+      updateLocalState({ error: 'Please enter a context focus area first' });
+      return;
+    }
+    
+    if (!uploadedResumeText) {
+      updateLocalState({ error: 'Please upload a resume first before generating context highlights' });
+      return;
+    }
+    
+    updateLocalState({ isProcessing: true, error: '' });
+    
+    try {
+      const contextHighlights = await generateHighlightsFromResume(uploadedResumeText, highlightContext);
+      updateLocalState({ suggestedHighlights: contextHighlights });
+    } catch (error) {
+      console.error('Error generating context highlights:', error);
+      updateLocalState({ 
+        error: 'Failed to generate context highlights. Please try again.' 
+      });
+    } finally {
+      updateLocalState({ isProcessing: false });
+    }
+  }, [highlightContext, uploadedResumeText, updateLocalState]);
+
+  const handleContextChange = useCallback((e) => {
+    updateLocalState({ highlightContext: e.target.value });
+  }, [updateLocalState]);
+
+  const handleQuickExampleClick = useCallback((example) => {
+    updateLocalState({ highlightContext: example });
+  }, [updateLocalState]);
+
+  // Memoized quick examples
+  const quickExamples = useMemo(() => [
+    'React development', 'Next.js projects', 'AWS cloud', 'Leadership', 
+    'Python', 'DevOps', 'UI/UX design', 'Data analysis'
+  ], []);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="bg-white rounded-lg shadow-lg p-6" data-testid="profile-form">
       <h2 className="text-2xl font-semibold text-gray-700 mb-6">
         Candidate Information
       </h2>
@@ -225,20 +310,21 @@ export default function ProfileForm({
         <FormLabel icon={Briefcase}>Placement Type</FormLabel>
         <PlacementTypeToggle
           value={formData.placementType}
-          onChange={(value) => onInputChange('placementType', value)}
+          onChange={(value) => handleInputChange('placementType', value)}
         />
       </FormSection>
 
       {/* Profile Image Upload */}
       <FormSection className="mb-6">
         <FormLabel icon={Upload}>Profile Image</FormLabel>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-500 transition-colors">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-[#2237f1] transition-colors">
           <input
             type="file"
             accept="image/*"
             onChange={onImageUpload}
             className="hidden"
             id="image-upload"
+            data-testid="image-upload"
           />
           <label htmlFor="image-upload" className="cursor-pointer">
             <User className="mx-auto mb-2 text-gray-400" size={32} />
@@ -251,18 +337,20 @@ export default function ProfileForm({
       <FormSection>
         <FormLabel icon={User}>Full Name</FormLabel>
         <FormInput
-          value={formData.name || ''}
-          onChange={(e) => onInputChange('name', e.target.value)}
+          value={formData.name}
+          onChange={(e) => handleInputChange('name', e.target.value)}
           placeholder="Enter candidate name"
+          data-testid="name-input"
         />
       </FormSection>
 
       <FormSection>
         <FormLabel>Position</FormLabel>
         <FormInput
-          value={formData.position || ''}
-          onChange={(e) => onInputChange('position', e.target.value)}
+          value={formData.position}
+          onChange={(e) => handleInputChange('position', e.target.value)}
           placeholder="Enter candidate position"
+          data-testid="position-input"
         />
       </FormSection>
 
@@ -270,8 +358,8 @@ export default function ProfileForm({
         <FormLabel>LinkedIn Profile</FormLabel>
         <FormInput
           type="url"
-          value={formData.linkedin || ''}
-          onChange={(e) => onInputChange('linkedin', e.target.value)}
+          value={(formData.linkedin || '').replace(/^https?:\/\//, '')}
+          onChange={(e) => handleInputChange('linkedin', e.target.value)}
           placeholder="Enter LinkedIn URL"
         />
       </FormSection>
@@ -280,8 +368,8 @@ export default function ProfileForm({
         <FormLabel>Resume Link</FormLabel>
         <FormInput
           type="url"
-          value={formData.resumeLink || ''}
-          onChange={(e) => onInputChange('resumeLink', e.target.value)}
+          value={(formData.resumeLink || '').replace(/^https?:\/\//, '')}
+          onChange={(e) => handleInputChange('resumeLink', e.target.value)}
           placeholder="Enter resume URL"
         />
       </FormSection>
@@ -290,9 +378,9 @@ export default function ProfileForm({
         <FormLabel>Portfolio Link</FormLabel>
         <FormInput
           type="url"
-          value={formData.portfolioLink || ''}
-          onChange={(e) => onInputChange('portfolioLink', e.target.value)}
-          placeholder="Enter portfolio URL (optional)"
+          value={(formData.portfolioLink || '').replace(/^https?:\/\//, '')}
+          onChange={(e) => handleInputChange('portfolioLink', e.target.value)}
+          placeholder="Enter portfolio URL"
         />
       </FormSection>
 
@@ -300,7 +388,7 @@ export default function ProfileForm({
         <FormLabel>Location</FormLabel>
         <FormInput
           value={formData.address}
-          onChange={(e) => onInputChange('address', e.target.value)}
+          onChange={(e) => handleInputChange('address', e.target.value)}
           placeholder="Enter candidate location"
         />
       </FormSection>
@@ -310,8 +398,9 @@ export default function ProfileForm({
         <FormInput
           type="email"
           value={formData.email}
-          onChange={(e) => onInputChange('email', e.target.value)}
+          onChange={(e) => handleInputChange('email', e.target.value)}
           placeholder="Enter candidate email address"
+          data-testid="email-input"
         />
       </FormSection>
 
@@ -320,8 +409,9 @@ export default function ProfileForm({
         <FormInput
           type="tel"
           value={formData.phone}
-          onChange={(e) => onInputChange('phone', e.target.value)}
+          onChange={(e) => handleInputChange('phone', e.target.value)}
           placeholder="Enter candidate phone number"
+          data-testid="phone-input"
         />
       </FormSection>
 
@@ -332,11 +422,70 @@ export default function ProfileForm({
           {[0, 1, 2].map((index) => (
             <FormInput
               key={index}
-              value={(formData.coreSkills || ['', '', ''])[index]}
+              value={coreSkills[index]}
               onChange={(e) => handleCoreSkillChange(index, e.target.value)}
               placeholder={`Core Skill ${index + 1}`}
             />
           ))}
+        </div>
+      </FormSection>
+
+      {/* Highlight Context Input */}
+      <FormSection className="mb-6">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <FormLabel>Highlight Focus Context (Optional)</FormLabel>
+          <div className="mb-2 text-sm text-gray-600">
+            Specify what type of highlights you want to focus on (e.g., "React development", "Next.js projects", "leadership experience", "AWS cloud infrastructure")
+          </div>
+          <div className="flex gap-2">
+            <FormInput
+              value={highlightContext}
+              onChange={handleContextChange}
+              placeholder="e.g., React development, Next.js, AWS, leadership, etc."
+              className="flex-1"
+              data-testid="context-input"
+            />
+            <button
+              onClick={generateContextHighlights}
+              disabled={!highlightContext.trim() || !uploadedResumeText || isProcessing}
+              className="px-4 py-2 bg-[#2237f1] text-white rounded-md hover:bg-[#1a2bd8] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+              title={!uploadedResumeText ? 'Upload a resume first' : 'Generate context-based highlights'}
+              type="button"
+              data-testid="generate-button"
+            >
+              {isProcessing ? (
+                <span className="flex items-center" data-testid="generating-status">
+                  <Loader className="animate-spin mr-1" size={14} />
+                  Generating...
+                </span>
+              ) : (
+                'Generate'
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Upload a resume first, then fill in the context and click Generate to create targeted highlights
+          </p>
+          {uploadedResumeText && (
+            <p className="text-xs text-green-600 mt-1">
+              ✓ Resume uploaded and ready for context-based highlight generation
+            </p>
+          )}
+          <div className="mt-2">
+            <p className="text-xs text-gray-600 mb-1">Quick examples:</p>
+            <div className="flex flex-wrap gap-1">
+              {quickExamples.map((example) => (
+                <button
+                  key={example}
+                  onClick={() => handleQuickExampleClick(example)}
+                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                  type="button"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </FormSection>
 
@@ -346,24 +495,26 @@ export default function ProfileForm({
           <FormLabel icon={Star}>Key Highlights</FormLabel>
           <button
             onClick={onAddHighlight}
-            className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+            className="text-[#2237f1] hover:text-[#1a2bd8] text-sm font-medium"
+            type="button"
+            data-testid="add-highlight"
           >
             Add Highlight
           </button>
         </div>
         
-        {formData.highlights.map((highlight, index) => (
+        {highlights.map((highlight, index) => (
           <HighlightInput
             key={index}
             value={highlight}
             onChange={(e) => onHighlightChange(index, e.target.value)}
             onRemove={() => onRemoveHighlight(index)}
-            canRemove={formData.highlights.length > 1}
+            canRemove={highlights.length > 1}
           />
         ))}
 
         {suggestedHighlights.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-4" data-testid="suggested-highlights">
             <h4 className="text-sm font-medium text-gray-700 mb-2">
               Suggested Highlights
             </h4>
@@ -381,6 +532,7 @@ export default function ProfileForm({
   );
 }
 
+// PropTypes
 ProfileForm.propTypes = {
   formData: PropTypes.shape({
     name: PropTypes.string,
@@ -403,6 +555,7 @@ ProfileForm.propTypes = {
   onImageUpload: PropTypes.func.isRequired
 };
 
+// PropTypes for sub-components
 FormSection.propTypes = {
   children: PropTypes.node.isRequired,
   className: PropTypes.string

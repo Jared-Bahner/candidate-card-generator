@@ -4,11 +4,15 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import ProfileForm from './components/ProfileForm';
 import ProfileCard from './components/ProfileCard';
 import PDFProfileCard from './components/PDFProfileCard';
+import RecentCards from './components/RecentCards';
+import ErrorBoundary from './components/ErrorBoundary';
+import { saveRecentCard, getRecentCards, clearRecentCards } from './utils/storage';
 import './fonts'; // Import font registration
 
 // Constants
 const TEMPLATE_WIDTH = 1920;
 const TEMPLATE_HEIGHT = 1080;
+
 const DEFAULT_FORM_DATA = {
   name: '',
   position: '',
@@ -24,22 +28,63 @@ const DEFAULT_FORM_DATA = {
   placementType: 'Contractor'
 };
 
-export default function App() {
+function AppContent() {
   const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
-  const [scaleFactor, setScaleFactor] = useState(1);
+  const [scaleFactor, setScaleFactor] = useState(0.5);
+  const [recentCards, setRecentCards] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef(null);
 
   useEffect(() => {
     const updateScaleFactor = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
-        setScaleFactor(containerWidth / TEMPLATE_WIDTH);
+        const containerHeight = containerRef.current.offsetHeight;
+        
+        console.log('Container dimensions:', { containerWidth, containerHeight });
+        
+        // Calculate scale based on available space
+        const maxWidth = containerWidth - 20; // 20px for padding
+        const maxHeight = containerHeight - 20; // 20px for padding
+        
+        const scaleX = maxWidth / TEMPLATE_WIDTH;
+        const scaleY = maxHeight / TEMPLATE_HEIGHT;
+        
+        console.log('Scale calculations:', { scaleX, scaleY, maxWidth, maxHeight });
+        
+        // Use the smaller scale to fit both dimensions perfectly
+        const newScale = Math.min(scaleX, scaleY);
+        
+        // Set reasonable bounds - allow scaling up to 1.2 for better visibility
+        const boundedScale = Math.max(Math.min(newScale, 1.2), 0.1);
+        
+        console.log('Final scale:', boundedScale);
+        setScaleFactor(boundedScale);
+      } else {
+        console.log('Container ref not available');
       }
     };
 
+    // Initial calculation
     updateScaleFactor();
-    window.addEventListener('resize', updateScaleFactor);
-    return () => window.removeEventListener('resize', updateScaleFactor);
+    
+    // Update on resize
+    const handleResize = () => {
+      setTimeout(updateScaleFactor, 100); // Small delay to ensure DOM is updated
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Load recent cards on component mount
+  useEffect(() => {
+    try {
+      const cards = getRecentCards();
+      setRecentCards(cards);
+    } catch (error) {
+      console.error('Error loading recent cards:', error);
+    }
   }, []);
 
   // Form handlers
@@ -75,100 +120,175 @@ export default function App() {
     }
 
     try {
+      setIsLoading(true);
       const reader = new FileReader();
       reader.onload = (e) => {
         handleInputChange('profileImage', e.target.result);
+        setIsLoading(false);
+      };
+      reader.onerror = () => {
+        throw new Error('Failed to read image file');
       };
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
+      setIsLoading(false);
     }
   };
 
-  document.documentElement.style.setProperty('--scale-factor', scaleFactor);
+  // Recent cards handlers
+  const handleLoadCard = (cardData) => {
+    setFormData(cardData);
+  };
+
+  // Note: handleRemoveCard is currently not used but kept for future functionality
+  // const handleRemoveCard = (cardId) => {
+  //   try {
+  //     clearRecentCards();
+  //     const updatedCards = getRecentCards();
+  //     setRecentCards(updatedCards);
+  //   } catch (error) {
+  //     console.error('Error removing card:', error);
+  //   }
+  // };
+
+  const handleClearHistory = () => {
+    try {
+      clearRecentCards();
+      setRecentCards([]);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    }
+  };
+
+  const handleSaveCard = () => {
+    try {
+      saveRecentCard(formData);
+      const updatedCards = getRecentCards();
+      setRecentCards(updatedCards);
+    } catch (error) {
+      console.error('Error saving card:', error);
+      alert('Failed to save card. Please try again.');
+    }
+  };
+
+  // Note: handleExportPDF is currently not used but kept for future functionality
+  // const handleExportPDF = () => {
+  //   console.log('Exporting PDF...');
+  // };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Banner */}
-      <header className="w-full bg-black py-4 px-6 mb-6 border-b-4 border-[#2237F1]">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col gap-2 items-start">
-            <img 
-              src="/assets/mwilogo.png" 
-              alt="MWI Logo" 
-              className="h-12 w-auto object-contain" 
-            />
-            <h1 className="text-xl font-bold text-white">
-              Candidate Card Creator
-            </h1>
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="app-header">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="header-content">
+            <div className="flex flex-col items-start">
+              <img 
+                src="/assets/mwilogo.png" 
+                alt="MWI Logo"
+                className="header-logo"
+                style={{ marginBottom: '0.5em' }}
+              />
+              <h1 className="header-title" style={{ marginTop: '0.5em' }}>
+                {import.meta.env.VITE_APP_NAME || 'Candidate Card Generator'}
+              </h1>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Form Section */}
-          <ProfileForm
-            formData={formData}
-            onInputChange={handleInputChange}
-            onHighlightChange={handleHighlightChange}
-            onAddHighlight={handleAddHighlight}
-            onRemoveHighlight={handleRemoveHighlight}
-            onImageUpload={handleImageUpload}
-          />
+          <div className="space-y-6">
+            <ProfileForm
+              formData={formData}
+              onInputChange={handleInputChange}
+              onHighlightChange={handleHighlightChange}
+              onAddHighlight={handleAddHighlight}
+              onRemoveHighlight={handleRemoveHighlight}
+              onImageUpload={handleImageUpload}
+            />
+          </div>
 
-          {/* Live Preview Section */}
-          <section className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-gray-700">
-                Live Preview
-              </h2>
-              <PDFDownloadLink
-                document={<PDFProfileCard formData={formData} />}
-                fileName={`${formData.name || 'candidate'}-card.pdf`}
-                className="flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-              >
-                {({ loading }) => (
-                  <>
-                    <Download className="mr-2" size={18} />
-                    {loading ? 'Preparing PDF...' : 'Export PDF'}
-                  </>
-                )}
-              </PDFDownloadLink>
-            </div>
-            
-            {/* Template Preview Container */}
-            <div>
-              <div 
-                ref={containerRef} 
-                className="relative w-full" 
-                style={{ paddingTop: '56.25%' }}
-              >
-                <div className="absolute inset-0 overflow-hidden">
-                  <div 
-                    className="w-full h-full" 
-                    style={{ 
-                      width: '100%',
-                      height: '100%',
-                      transform: 'scale(var(--scale-factor))',
-                      transformOrigin: 'top left',
+          {/* Preview Section */}
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold text-gray-700">Preview</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveCard}
+                    className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+                    disabled={isLoading}
+                  >
+                    Save Card
+                  </button>
+                  <PDFDownloadLink
+                    document={<PDFProfileCard formData={formData} />}
+                    fileName={`${formData.name || 'candidate'}-card.pdf`}
+                    className="inline-flex items-center px-4 py-2 bg-[#2237f1] text-white rounded-md hover:bg-[#1a2bd8] transition-colors"
+                    onError={(error) => {
+                      console.error('PDF generation error:', error);
+                      alert('Failed to generate PDF. Please try again.');
                     }}
                   >
-                    <div style={{ 
-                      width: `${TEMPLATE_WIDTH}px`, 
-                      height: `${TEMPLATE_HEIGHT}px` 
-                    }}>
-                      <ProfileCard formData={formData} />
-                    </div>
-                  </div>
+                    {({ loading, error }) => (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        {loading ? 'Generating...' : error ? 'Error' : 'Export PDF'}
+                      </>
+                    )}
+                  </PDFDownloadLink>
+                </div>
+              </div>
+
+              {/* Preview Container */}
+              <div
+                ref={containerRef}
+                className="preview-container"
+              >
+                <div
+                  className="preview-content"
+                  style={{
+                    transform: `scale(${scaleFactor})`,
+                    width: `${TEMPLATE_WIDTH}px`,
+                    height: `${TEMPLATE_HEIGHT}px`,
+                    backgroundColor: 'black'
+                  }}
+                >
+                  <ProfileCard formData={formData} />
                 </div>
               </div>
             </div>
-          </section>
+
+            {/* Recent Cards */}
+            <RecentCards
+              recentCards={recentCards}
+              onLoadCard={handleLoadCard}
+              onClearHistory={handleClearHistory}
+            />
+          </div>
         </div>
-      </main>
+
+        {/* Footer */}
+        <footer className="mt-12 text-center text-gray-500 text-sm">
+          <p>
+            © {new Date().getFullYear()} Candidate Card Generator. 
+            Version {import.meta.env.VITE_APP_VERSION || '1.0.0'}
+          </p>
+        </footer>
+      </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }

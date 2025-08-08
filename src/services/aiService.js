@@ -59,7 +59,13 @@ export async function extractTextFromPDF(pdfBuffer) {
       response_format: { type: "json_object" }
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const parsedData = JSON.parse(response.choices[0].message.content);
+    
+    // Return both the parsed data and the full text
+    return {
+      ...parsedData,
+      fullText: fullText
+    };
   } catch (error) {
     console.error('Error processing PDF:', error);
     if (error.message && error.message.includes('has been deprecated')) {
@@ -69,25 +75,34 @@ export async function extractTextFromPDF(pdfBuffer) {
   }
 }
 
-// Helper function to convert ArrayBuffer to base64
-function arrayBufferToBase64(buffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
+// Helper function to convert ArrayBuffer to base64 (currently unused)
+// function arrayBufferToBase64(buffer) {
+//   let binary = '';
+//   const bytes = new Uint8Array(buffer);
+//   const len = bytes.byteLength;
+//   for (let i = 0; i < len; i++) {
+//     binary += String.fromCharCode(bytes[i]);
+//   }
+//   return btoa(binary);
+// }
 
-export async function generateHighlightsFromResume(resumeText) {
+export async function generateHighlightsFromResume(resumeText, context = '') {
   try {
+    let systemPrompt = "You are a professional resume analyzer. Extract and generate 5-7 key highlights from the resume text provided. Each highlight should be exactly ONE paragraph with no more than 4 sentences, focusing on quantifiable achievements, specific technologies used, and business impact. Include metrics, numbers, and outcomes where possible. Format each highlight as a concise, impactful paragraph that demonstrates the candidate's expertise and results. Keep each highlight focused and to the point.";
+    
+    // Add context-specific instructions if provided
+    if (context && context.trim()) {
+      systemPrompt += `\n\nIMPORTANT CONTEXT: The user wants highlights that specifically focus on: ${context.trim()}. Please prioritize and emphasize experiences, skills, and achievements related to this context. If the resume contains relevant information about this context, make sure to highlight it prominently. If the resume doesn't contain much information about this context, still generate relevant highlights but note that the resume may not have extensive experience in this area.`;
+    }
+
+    systemPrompt += `\n\nFORMAT REQUIREMENTS: Each highlight must be exactly one paragraph with a maximum of 4 sentences. Do not use bullet points or numbered lists. Each highlight should be a standalone paragraph.`;
+
     const response = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
       messages: [
         {
           role: "system",
-          content: "You are a professional resume analyzer. Extract and generate 5-7 key highlights from the resume text provided. Each highlight should be 2-3 sentences long, focusing on quantifiable achievements, specific technologies used, and business impact. Include metrics, numbers, and outcomes where possible. Format each highlight as a detailed, impactful paragraph that demonstrates the candidate's expertise and results."
+          content: systemPrompt
         },
         {
           role: "user",
@@ -102,9 +117,9 @@ export async function generateHighlightsFromResume(resumeText) {
     const highlightsText = response.choices[0].message.content;
     // Split the response into individual highlights and clean them up
     const highlights = highlightsText
-      .split('\n')
-      .filter(line => line.trim())
-      .map(line => line.replace(/^[•\-\*]\s*/, '')); // Remove bullet points if present
+      .split('\n\n') // Split by double newlines to get paragraphs
+      .filter(paragraph => paragraph.trim())
+      .map(paragraph => paragraph.trim().replace(/^[•\-*\d]+\.?\s*/, '')); // Remove bullet points, numbers, and extra whitespace
 
     return highlights;
   } catch (error) {
