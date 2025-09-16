@@ -394,43 +394,43 @@ PDFProfileCard.propTypes = {
 };
 
 const ContactInfo = ({ formData }) => (
-  <View style={styles.contactInfo}>
-    {formData.position && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>Position:</Text>
-        <Text style={styles.contactValue}>{formData.position}</Text>
-      </View>
-    )}
-    {formData.address && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>Location:</Text>
-        <Text style={styles.contactValue}>{formData.address}</Text>
-      </View>
-    )}
-    {formData.phone && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>Phone Number:</Text>
-        <Text style={styles.contactValue}>{formData.phone}</Text>
-      </View>
-    )}
-    {formData.email && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>Email:</Text>
-        <Text style={styles.contactValue}>{formData.email}</Text>
-      </View>
-    )}
-    {formData.linkedin && (
-      <View style={styles.contactRow}>
-        <Text style={styles.contactLabel}>LinkedIn Profile:</Text>
-        <Link src={formatUrl(formData.linkedin)}>
-          <View style={styles.linkWrapper}>
-            <Text style={styles.linkText}>Visit Here</Text>
-            <View style={styles.underline} />
-          </View>
-        </Link>
-      </View>
-    )}
-  </View>
+    <View style={styles.contactInfo}>
+      {formData.position && formData.position.trim() && (
+        <View style={styles.contactRow}>
+          <Text style={styles.contactLabel}>Position:</Text>
+          <Text style={styles.contactValue}>{formData.position}</Text>
+        </View>
+      )}
+      {formData.address && formData.address.trim() && (
+        <View style={styles.contactRow}>
+          <Text style={styles.contactLabel}>Location:</Text>
+          <Text style={styles.contactValue}>{formData.address}</Text>
+        </View>
+      )}
+      {formData.phone && formData.phone.trim() && (
+        <View style={styles.contactRow}>
+          <Text style={styles.contactLabel}>Phone Number:</Text>
+          <Text style={styles.contactValue}>{formData.phone}</Text>
+        </View>
+      )}
+      {formData.email && formData.email.trim() && (
+        <View style={styles.contactRow}>
+          <Text style={styles.contactLabel}>Email:</Text>
+          <Text style={styles.contactValue}>{formData.email}</Text>
+        </View>
+      )}
+      {formData.linkedin && formData.linkedin.trim() && (
+        <View style={styles.contactRow}>
+          <Text style={styles.contactLabel}>LinkedIn Profile:</Text>
+          <Link src={formatUrl(formData.linkedin)}>
+            <View style={styles.linkWrapper}>
+              <Text style={styles.linkText}>Visit Here</Text>
+              <View style={styles.underline} />
+            </View>
+          </Link>
+        </View>
+      )}
+    </View>
 );
 
 export default PDFProfileCard; 

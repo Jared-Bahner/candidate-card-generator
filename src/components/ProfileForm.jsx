@@ -195,19 +195,51 @@ export default function ProfileForm({
       // Extract parsed data and full text
       const { fullText, ...parsedData } = result;
       
+      // Debug logging for resume upload
+      console.log('Resume upload parsed data:', {
+        name: parsedData.name,
+        position: parsedData.position,
+        address: parsedData.address,
+        email: parsedData.email,
+        phone: parsedData.phone,
+        linkedin: parsedData.linkedin,
+        fullParsedData: parsedData
+      });
+      
       // Batch update form data for better performance
-      const updates = {
-        name: parsedData.name || '',
-        position: parsedData.position || '',
-        email: parsedData.email || '',
-        phone: parsedData.phone || '',
-        address: parsedData.address || '',
-        linkedin: parsedData.linkedin || '',
-        resumeLink: parsedData.resumeLink || '',
-        portfolioLink: parsedData.portfolioLink || ''
-      };
+      // Only update fields that have meaningful data from AI parsing
+      const updates = {};
+      
+      // Only update fields if they have non-empty values from AI
+      if (parsedData.name && parsedData.name.trim()) {
+        updates.name = parsedData.name.trim();
+      }
+      if (parsedData.position && parsedData.position.trim()) {
+        updates.position = parsedData.position.trim();
+      }
+      if (parsedData.email && parsedData.email.trim()) {
+        updates.email = parsedData.email.trim();
+      }
+      if (parsedData.phone && parsedData.phone.trim()) {
+        updates.phone = parsedData.phone.trim();
+      }
+      if (parsedData.address && parsedData.address.trim()) {
+        updates.address = parsedData.address.trim();
+      }
+      if (parsedData.linkedin && parsedData.linkedin.trim()) {
+        updates.linkedin = parsedData.linkedin.trim();
+      }
+      if (parsedData.resumeLink && parsedData.resumeLink.trim()) {
+        updates.resumeLink = parsedData.resumeLink.trim();
+      }
+      if (parsedData.portfolioLink && parsedData.portfolioLink.trim()) {
+        updates.portfolioLink = parsedData.portfolioLink.trim();
+      }
 
-      // Apply all updates
+      // Debug logging for updates being applied
+      console.log('Resume upload updates to apply:', updates);
+      
+      // Apply only meaningful updates
       Object.entries(updates).forEach(([field, value]) => {
         handleInputChange(field, value);
       });
