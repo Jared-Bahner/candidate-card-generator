@@ -195,17 +195,6 @@ export default function ProfileForm({
       // Extract parsed data and full text
       const { fullText, ...parsedData } = result;
       
-      // Debug logging for resume upload
-      console.log('Resume upload parsed data:', {
-        name: parsedData.name,
-        position: parsedData.position,
-        address: parsedData.address,
-        email: parsedData.email,
-        phone: parsedData.phone,
-        linkedin: parsedData.linkedin,
-        fullParsedData: parsedData
-      });
-      
       // Batch update form data for better performance
       // Only update fields that have meaningful data from AI parsing
       const updates = {};
@@ -236,9 +225,6 @@ export default function ProfileForm({
         updates.portfolioLink = parsedData.portfolioLink.trim();
       }
 
-      // Debug logging for updates being applied
-      console.log('Resume upload updates to apply:', updates);
-      
       // Apply only meaningful updates
       Object.entries(updates).forEach(([field, value]) => {
         handleInputChange(field, value);

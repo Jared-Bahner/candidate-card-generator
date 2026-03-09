@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download } from 'lucide-react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import ProfileForm from './components/ProfileForm';
 import ProfileCard from './components/ProfileCard';
-import PDFProfileCard from './components/PDFProfileCard';
 import RecentCards from './components/RecentCards';
 import ErrorBoundary from './components/ErrorBoundary';
 import { saveRecentCard, getRecentCards, clearRecentCards } from './utils/storage';
-import './fonts'; // Import font registration
+import { exportProfileCardToPdf } from './utils/pdfExport';
+import { MWI_LOGO_FALLBACK_DATA_URI, MWI_LOGO_PRIMARY_SRC } from './utils/mwiLogo';
 
 // Constants
 const TEMPLATE_WIDTH = 1920;
@@ -33,7 +32,9 @@ function AppContent() {
   const [scaleFactor, setScaleFactor] = useState(0.5);
   const [recentCards, setRecentCards] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const containerRef = useRef(null);
+  const exportCardRef = useRef(null);
 
   useEffect(() => {
     const updateScaleFactor = () => {
@@ -173,10 +174,31 @@ function AppContent() {
     }
   };
 
-  // Note: handleExportPDF is currently not used but kept for future functionality
-  // const handleExportPDF = () => {
-  //   console.log('Exporting PDF...');
-  // };
+  const handleExportPDF = async () => {
+    if (!exportCardRef.current) {
+      alert('Preview is not ready for export yet. Please try again.');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const safeFileName = (formData.name || 'candidate')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      await exportProfileCardToPdf({
+        element: exportCardRef.current,
+        fileName: `${safeFileName || 'candidate'}-card.pdf`
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -186,10 +208,14 @@ function AppContent() {
           <div className="header-content">
             <div className="flex flex-col items-start">
               <img 
-                src="/assets/mwilogo.png" 
+                src={MWI_LOGO_PRIMARY_SRC}
                 alt="MWI Logo"
                 className="header-logo"
                 style={{ marginBottom: '0.5em' }}
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = MWI_LOGO_FALLBACK_DATA_URI;
+                }}
               />
               <h1 className="header-title" style={{ marginTop: '0.5em' }}>
                 {import.meta.env.VITE_APP_NAME || 'Candidate Card Generator'}
@@ -226,22 +252,14 @@ function AppContent() {
                   >
                     Save Card
                   </button>
-                  <PDFDownloadLink
-                    document={<PDFProfileCard formData={formData} />}
-                    fileName={`${formData.name || 'candidate'}-card.pdf`}
-                    className="inline-flex items-center px-4 py-2 bg-[#2237f1] text-white rounded-md hover:bg-[#1a2bd8] transition-colors"
-                    onError={(error) => {
-                      console.error('PDF generation error:', error);
-                      alert('Failed to generate PDF. Please try again.');
-                    }}
+                  <button
+                    onClick={handleExportPDF}
+                    className="inline-flex items-center px-4 py-2 bg-[#2237f1] text-white rounded-md hover:bg-[#1a2bd8] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={isLoading || isExporting}
                   >
-                    {({ loading, error }) => (
-                      <>
-                        <Download className="w-4 h-4 mr-2" />
-                        {loading ? 'Generating...' : error ? 'Error' : 'Export PDF'}
-                      </>
-                    )}
-                  </PDFDownloadLink>
+                    <Download className="w-4 h-4 mr-2" />
+                    {isExporting ? 'Generating...' : 'Export PDF'}
+                  </button>
                 </div>
               </div>
 
@@ -280,6 +298,29 @@ function AppContent() {
             Version {import.meta.env.VITE_APP_VERSION || '1.0.0'}
           </p>
         </footer>
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed top-0 left-0"
+        style={{
+          width: `${TEMPLATE_WIDTH}px`,
+          height: `${TEMPLATE_HEIGHT}px`,
+          overflow: 'hidden',
+          opacity: 0,
+          zIndex: -1
+        }}
+      >
+        <div
+          ref={exportCardRef}
+          style={{
+            width: `${TEMPLATE_WIDTH}px`,
+            height: `${TEMPLATE_HEIGHT}px`,
+            backgroundColor: '#FFFFFF'
+          }}
+        >
+          <ProfileCard formData={formData} />
+        </div>
       </div>
     </div>
   );

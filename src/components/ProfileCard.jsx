@@ -1,38 +1,30 @@
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, MapPin, Mail, Phone, Linkedin } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { ensureHttps } from '../utils/common';
+import { MWI_LOGO_FALLBACK_DATA_URI, MWI_LOGO_PRIMARY_SRC } from '../utils/mwiLogo';
 
 const StatusPill = ({ type }) => {
-  const getStatusImage = () => {
-    switch(type?.toLowerCase()) {
-      case 'contractor':
-        return '/assets/Contractor-Status-Pill.png';
-      case 'direct placement':
-        return '/assets/Direct-Placement-Status-Pill.png';
-      case 'contract to hire':
-        return '/assets/Contract-to-Hire-Status-Pill.png';
-      default:
-        return null;
-    }
+  if (!type) return null;
+
+  const badgeClasses = {
+    contractor: 'bg-[#2563eb] text-white',
+    'direct placement': 'bg-[#0f766e] text-white',
+    'contract to hire': 'bg-[#7c3aed] text-white'
   };
 
-  const imageSrc = getStatusImage();
-  if (!imageSrc) return null;
+  const normalizedType = type.toLowerCase();
+  const badgeClass = badgeClasses[normalizedType] || 'bg-[#1f2937] text-white';
 
   return (
-    <div className="absolute top-[85px] right-[2%] z-10">
-      <img 
-        src={imageSrc} 
-        alt={type}
-        className="h-[48px] w-auto"
-      />
+    <div className={`px-5 py-2 rounded-[6px] text-[24px] font-medium tracking-wide flex items-center justify-center text-center ${badgeClass}`}>
+      {type}
     </div>
   );
 };
 
 const ProfileImage = ({ src }) => (
-  <div className="absolute top-0 left-0 w-[31.6%] h-[67.8%]">
+  <div className="w-full h-[52%]">
     {src ? (
       <img
         src={src}
@@ -40,7 +32,7 @@ const ProfileImage = ({ src }) => (
         className="w-full h-full object-cover"
       />
     ) : (
-      <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
         <User className="text-gray-400 w-[40%] h-[40%]" />
       </div>
     )}
@@ -48,12 +40,12 @@ const ProfileImage = ({ src }) => (
 );
 
 const CoreSkills = ({ skills = ['', '', ''] }) => (
-  <div className="w-[31.6%] bg-[#e1e1e1] px-[2%] py-[1%] flex flex-col">
-    <h4 className="text-[38px] font-semibold text-black mb-[1%] font-termina">Core Skills</h4>
-    <div className="space-y-[3%] flex-grow flex flex-col justify-center">
+  <div className="px-[8%] pt-[8%] pb-[6%] flex-1">
+    <h4 className="text-[52px] font-semibold mb-[4%] font-termina" style={{ color: '#2237F1' }}>Core Skills</h4>
+    <div className="space-y-[2.5%]">
       {skills.map((skill, index) => (
-        <div key={index} className="text-[32px] text-black">
-          {skill || `Skill ${index + 1}`}
+        <div key={index} className="text-[44px] text-[#111827] leading-[1.2]">
+          {skill?.trim() ? `• ${skill}` : `• Skill ${index + 1}`}
         </div>
       ))}
     </div>
@@ -64,66 +56,100 @@ const KeyHighlights = ({ highlights }) => {
   if (!highlights.some(h => h.trim())) return null;
 
   return (
-    <div className="flex-1 bg-white px-[2%] py-[1%]">
-      <h4 className="text-[38px] font-semibold mb-[1%] font-termina" style={{ color: '#2237F1' }}>Highlights</h4>
-      <ul className="space-y-[1%]">
+    <div>
+      <h4 className="text-[52px] font-semibold mb-[2.5%] font-termina" style={{ color: '#2237F1' }}>Highlights</h4>
+      <div className="space-y-[1.4%]">
         {highlights
           .filter(highlight => highlight.trim())
           .map((highlight, index) => (
-            <li key={index} className="text-[24px] text-black flex items-start">
-              <span className="text-[#2237f1] mr-[1%] flex-shrink-0 text-[24px]">•</span>
-              <span>{highlight}</span>
-            </li>
+            <div key={index} className="flex items-start text-[32px] text-[#111827] leading-[1.2]">
+              <span className="mr-[1%]">•</span>
+              <p className="flex-1">{highlight}</p>
+            </div>
           ))}
-      </ul>
+      </div>
     </div>
   );
 };
 
+const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
+  <div className="flex gap-4">
+    {resumeLink && (
+      <a
+        href={ensureHttps(resumeLink)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] bg-[#2237F1] text-white text-[15px] hover:bg-[#1a2bd8] transition-colors"
+      >
+        Download Resume
+      </a>
+    )}
+    {portfolioLink && (
+      <a
+        href={ensureHttps(portfolioLink)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[15px] hover:bg-[#f3f4f6] transition-colors"
+      >
+        Visit Portfolio
+      </a>
+    )}
+    {!portfolioLink && linkedin && (
+      <a
+        href={ensureHttps(linkedin)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[15px] hover:bg-[#f3f4f6] transition-colors"
+      >
+        LinkedIn Profile
+      </a>
+    )}
+  </div>
+);
+
 const ContactInfo = ({ formData }) => (
-  <div className="space-y-[1.25%]">
+  <div className="space-y-[2%]">
     {formData.position && (
-      <div className="flex items-center text-[32px] text-white">
-        <span className="text-white font-bold font-space-grotesk mr-[2%]">Position:</span>
+      <div className="text-[50px] leading-[1.1]" style={{ color: '#2237F1' }}>
         <span>{formData.position}</span>
       </div>
     )}
     {formData.address && (
-      <div className="flex items-center text-[32px] text-white">
-        <span className="text-white font-bold font-space-grotesk mr-[2%]">Location:</span>
+      <div className="flex items-center text-[42px] text-[#111827] leading-[1.2]">
+        <MapPin className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
         <span>{formData.address}</span>
       </div>
     )}
-    {formData.phone && (
-      <div className="text-[32px] text-white flex items-center">
-        <span className="text-white font-bold font-space-grotesk mr-[2%]">Phone Number:</span>
-        <span>{formData.phone}</span>
-      </div>
-    )}
     {formData.email && (
-      <div className="text-[32px] text-white flex items-center">
-        <span className="text-white font-bold font-space-grotesk mr-[2%]">Email:</span>
+      <div className="text-[42px] text-[#111827] flex items-center leading-[1.2]">
+        <Mail className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
         <span>{formData.email}</span>
       </div>
     )}
+    {formData.phone && (
+      <div className="text-[42px] text-[#111827] flex items-center leading-[1.2]">
+        <Phone className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
+        <span>{formData.phone}</span>
+      </div>
+    )}
     {formData.linkedin && (
-      <div className="text-[32px] text-white flex items-center" data-pdf-link>
-        <span className="text-white font-bold font-space-grotesk mr-[2%]">LinkedIn Profile:</span>
+      <div className="text-[42px] text-[#111827] flex items-center" data-pdf-link>
+        <Linkedin className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
         <a 
           href={ensureHttps(formData.linkedin)}
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            color: '#2DD4BF',
+            color: '#2237F1',
             textDecoration: 'underline',
             cursor: 'pointer',
             textDecorationThickness: '2px',
             textUnderlineOffset: '2px'
           }}
-          className="hover:bg-teal-500/10 transition-colors rounded px-1"
+          className="hover:bg-blue-500/10 transition-colors rounded px-1"
           data-pdf-link-url={ensureHttps(formData.linkedin)}
         >
-          Visit Here
+          LinkedIn Profile
         </a>
       </div>
     )}
@@ -139,28 +165,15 @@ const EmptyState = () => (
 );
 
 export default function ProfileCard({ formData }) {
-  console.log('ProfileCard rendering with formData:', formData);
-  
   const isEmpty = !formData.name && !formData.address && !formData.phone && 
                  !formData.email && !formData.highlights.some(h => h.trim()) &&
                  !formData.position && !formData.linkedin;
 
-  // Debug button rendering
-  console.log('ProfileCard Debug:', {
-    resumeLink: formData.resumeLink,
-    portfolioLink: formData.portfolioLink,
-    buttonConditions: {
-      resumeButton: !!formData.resumeLink,
-      portfolioButton: !!formData.portfolioLink
-    }
-  });
-
   // Simple fallback if there are layout issues
   if (!formData) {
-    console.log('ProfileCard: No formData provided, showing fallback');
     return (
-      <div className="w-full h-full bg-black flex items-center justify-center">
-        <div className="text-white text-center">
+      <div className="w-full h-full bg-white flex items-center justify-center">
+        <div className="text-[#111827] text-center">
           <h3 className="text-2xl mb-2">No Data</h3>
           <p>Please fill out the form to see the preview</p>
         </div>
@@ -168,66 +181,44 @@ export default function ProfileCard({ formData }) {
     );
   }
 
-  console.log('ProfileCard: Rendering main component');
   return (
-    <div className="w-full h-full bg-black relative font-primary" style={{ width: '1920px', height: '1080px' }}>
-      <StatusPill type={formData.placementType} />
-      <ProfileImage src={formData.profileImage} />
-
-      {/* Bottom Container for Skills and Highlights */}
-      <div className="absolute top-[67.8%] bottom-0 left-0 right-0 flex">
+    <div className="w-full h-full bg-white relative font-primary text-[#111827]" style={{ width: '1920px', height: '1080px' }}>
+      <div className="absolute top-0 bottom-0 left-0 w-[31.6%] border-r border-[#e5e7eb] flex flex-col">
+        <ProfileImage src={formData.profileImage} />
+        <div className="px-[8%] py-[4%]">
+          <ActionButtons
+            resumeLink={formData.resumeLink}
+            portfolioLink={formData.portfolioLink}
+            linkedin={formData.linkedin}
+          />
+        </div>
         <CoreSkills skills={formData.coreSkills} />
-        <KeyHighlights highlights={formData.highlights} />
       </div>
 
       {/* Content Container */}
-      <div className="absolute left-[31.6%] pl-[85px] pt-[85px] top-0 right-[2%]">
-        {/* MWI Logo */}
-        <div className="mb-[2%]">
+      <div className="absolute left-[31.6%] top-0 right-0 bottom-0 px-[3.5%] pt-[4%] pb-[3%]">
+        <div className="flex items-start justify-between mb-[2.2%]">
+          <StatusPill type={formData.placementType} />
           <img 
-            src="/assets/mwilogo.png" 
+            src={MWI_LOGO_PRIMARY_SRC}
             alt="MWI Logo"
-            className="w-[24.7%] h-auto"
+            className="w-[220px] h-auto"
+            onError={(event) => {
+              event.currentTarget.onerror = null;
+              event.currentTarget.src = MWI_LOGO_FALLBACK_DATA_URI;
+            }}
           />
         </div>
 
         {/* Name */}
-        <h3 className="font-termina text-[76px] font-bold text-white mb-[4%] leading-none">
+        <h3 className="font-termina text-[82px] font-bold text-[#111827] mb-[2%] leading-none">
           {formData.name || 'Candidate Name'}
         </h3>
 
         <ContactInfo formData={formData} />
-        
-        {/* Action Buttons */}
-        <div className="mt-[4%] flex gap-4">
-          {formData.resumeLink && (
-            <a 
-              href={ensureHttps(formData.resumeLink)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block hover:opacity-80 transition-opacity"
-            >
-              <img 
-                src="/assets/Resume-Button.png"
-                alt="Resume"
-                className="h-16 w-[160px]"
-              />
-            </a>
-          )}
-          {formData.portfolioLink && (
-            <a 
-              href={ensureHttps(formData.portfolioLink)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block hover:opacity-80 transition-opacity"
-            >
-              <img 
-                src="/assets/Portfolio-Button.png"
-                alt="Portfolio"
-                className="h-16 w-[160px]"
-              />
-            </a>
-          )}
+
+        <div className="mt-[4%] pt-[3%] border-t border-[#e5e7eb]">
+          <KeyHighlights highlights={formData.highlights} />
         </div>
 
         {isEmpty && <EmptyState />}
@@ -263,6 +254,12 @@ ProfileImage.propTypes = {
 
 CoreSkills.propTypes = {
   skills: PropTypes.arrayOf(PropTypes.string)
+};
+
+ActionButtons.propTypes = {
+  resumeLink: PropTypes.string,
+  portfolioLink: PropTypes.string,
+  linkedin: PropTypes.string
 };
 
 KeyHighlights.propTypes = {

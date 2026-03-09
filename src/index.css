@@ -86,7 +86,7 @@ body {
 
 /* Header styles */
 .app-header {
-  background: linear-gradient(to right, #000000, #1a1a1a);
+  background: #ffffff;
   border-bottom: 4px solid #2237f1;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -107,7 +107,7 @@ body {
 .header-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #2237f1;
   margin: 0;
   line-height: 1.2;
   margin-top: 0.3em;

@@ -1,6 +1,21 @@
 const STORAGE_KEY = 'candidate-card-creator-recent-cards';
 const MAX_RECENT_CARDS = 5;
 
+const OMITTED_STORAGE_FIELDS = new Set([
+  'fullText',
+  'uploadedResumeText',
+  'resumeText',
+  'rawResumeText',
+  'placeholderMap',
+  'sanitizedText'
+]);
+
+const sanitizeCardDataForStorage = (cardData = {}) => {
+  return Object.fromEntries(
+    Object.entries(cardData).filter(([key]) => !OMITTED_STORAGE_FIELDS.has(key))
+  );
+};
+
 /**
  * Save a card to recent cards in local storage
  * @param {Object} cardData - The form data to save
@@ -13,7 +28,7 @@ export const saveRecentCard = (cardData) => {
     // Create new card entry
     const newCard = {
       id: Date.now().toString(),
-      data: { ...cardData },
+      data: sanitizeCardDataForStorage(cardData),
       timestamp: Date.now()
     };
     

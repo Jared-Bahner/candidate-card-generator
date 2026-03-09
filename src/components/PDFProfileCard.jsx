@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Document, Page, View, Text, Image, Link, StyleSheet } from '@react-pdf/renderer';
 import { ensureHttps } from '../utils/common';
+import { MWI_LOGO_FALLBACK_DATA_URI, MWI_LOGO_PRIMARY_SRC } from '../utils/mwiLogo';
 
 // Constants for layout dimensions
 const TEMPLATE_WIDTH = 1920;
@@ -9,35 +10,30 @@ const TEMPLATE_HEIGHT = 1080;
 
 // Asset paths
 const ASSETS = {
-  logo: '/assets/mwilogo.png',
-  statusPills: {
-  'Contractor': '/assets/Contractor-Status-Pill.png',
-  'Direct Placement': '/assets/Direct-Placement-Status-Pill.png',
-  'Contract to Hire': '/assets/Contract-to-Hire-Status-Pill.png'
-  },
-  buttons: {
-    resume: '/assets/Resume-Button.png',
-    portfolio: '/assets/Portfolio-Button.png'
-  }
+  logo: MWI_LOGO_PRIMARY_SRC
 };
 
-// Helper function to get absolute URL for assets
-const getAssetUrl = (path) => {
-  if (!path) return '';
-  // Remove leading slash if present
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  // Get the base URL from the window location
-  const baseUrl = window.location.origin;
-  // For PDF rendering, we need to ensure the URL is absolute
-  return `${baseUrl}/${cleanPath}`;
+const createSvgDataUri = (svg) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+
+const ICONS = {
+  location: createSvgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>`
+  ),
+  email: createSvgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>`
+  ),
+  phone: createSvgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.86 19.86 0 0 1 3.09 5.18 2 2 0 0 1 5.08 3h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.62a2 2 0 0 1-.45 2.11L9.1 10.6a16 16 0 0 0 4.3 4.3l1.15-1.15a2 2 0 0 1 2.11-.45c.84.29 1.72.5 2.62.62A2 2 0 0 1 22 16.92z"/></svg>`
+  ),
+  linkedin: createSvgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="2" stroke="#9CA3AF" stroke-width="1.8"/><path d="M8 10v8" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="7" r="1.2" fill="#6B7280"/><path d="M12 18v-4.2c0-1.2 1-2.2 2.2-2.2 1.2 0 2.2 1 2.2 2.2V18" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round"/></svg>`
+  )
 };
 
 // Helper function to get asset path for PDF
 const getPdfAssetPath = (path) => {
   if (!path) return '';
-  // Remove leading slash if present
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  return cleanPath;
+  return path;
 };
 
 // Create styles
@@ -45,18 +41,26 @@ const styles = StyleSheet.create({
   page: {
     width: TEMPLATE_WIDTH,
     height: TEMPLATE_HEIGHT,
-    backgroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
     position: 'relative',
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
+    color: '#111827',
   },
-  profileImageContainer: {
+  sidebar: {
     position: 'absolute',
     top: 0,
     left: 0,
     width: '31.6%',
-    height: '67.8%',
-    backgroundColor: '#1F2937',
+    height: '100%',
+    borderRightWidth: 1,
+    borderRightColor: '#E5E7EB',
+    flexDirection: 'column',
+  },
+  profileImageContainer: {
+    width: '100%',
+    height: '52%',
+    backgroundColor: '#F3F4F6',
     overflow: 'hidden',
   },
   profileImage: {
@@ -67,141 +71,155 @@ const styles = StyleSheet.create({
     imageResolution: '300dpi',
   },
   statusPill: {
-    position: 'absolute',
-    top: 85,
-    right: '2%',
-    width: 'auto',
-    height: 48,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusPillText: {
+    fontSize: 24,
+    fontFamily: 'Space Grotesk',
+    fontWeight: 500,
+    color: '#111827',
+    textAlign: 'center',
   },
   contentContainer: {
     position: 'absolute',
     left: '31.6%',
     top: 0,
-    right: '2%',
-    paddingLeft: 85,
-    paddingTop: 85,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 68,
+    paddingTop: 46,
+    paddingBottom: 36,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
   },
   logo: {
-    width: '24.7%',
-    marginBottom: '2%',
+    width: 220,
   },
   name: {
-    fontSize: 76,
+    fontSize: 82,
     fontFamily: 'Termina',
     fontWeight: 400,
-    color: '#FFFFFF',
-    marginBottom: '4%',
+    color: '#111827',
+    marginBottom: 12,
   },
   contactInfo: {
-    marginBottom: 20,
+    marginBottom: 24,
     flexDirection: 'column',
-    gap: 14,
+    gap: 10,
+  },
+  contactText: {
+    fontSize: 42,
+    color: '#111827',
+    fontFamily: 'Space Grotesk',
+    fontWeight: 400,
+    lineHeight: 1.2,
+  },
+  positionText: {
+    fontSize: 50,
+    color: '#2237F1',
+    fontFamily: 'Space Grotesk',
+    fontWeight: 400,
+    lineHeight: 1.2,
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  contactLabel: {
-    fontSize: 32,
-    color: '#FFFFFF',
-    fontFamily: 'Space Grotesk',
-    fontWeight: 700,
-    marginRight: 16,
+  contactIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 12,
   },
-  contactValue: {
-    fontSize: 32,
-    color: '#FFFFFF',
+  linkedinText: {
+    fontSize: 42,
+    color: '#2237F1',
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
+    textDecoration: 'underline',
   },
-  linkWrapper: {
-    position: 'relative',
-  },
-  linkText: {
-    fontSize: 32,
-    color: '#2DD4BF',
-    fontFamily: 'Space Grotesk',
-    fontWeight: 400,
-  },
-  underline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#2DD4BF',
-  },
-  bottomContainer: {
-    position: 'absolute',
-    top: '67.8%',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
+  highlightContainer: {
+    marginTop: 20,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   coreSkills: {
-    width: '31.6%',
-    backgroundColor: '#e1e1e1',
-    paddingHorizontal: 38,
-    paddingVertical: 38,
-    display: 'flex',
-    flexDirection: 'column',
+    paddingHorizontal: 30,
+    paddingTop: 26,
+    paddingBottom: 24,
+    flex: 1,
   },
   coreSkillsTitle: {
-    fontSize: 38,
-    fontFamily: 'Termina',
-    fontWeight: 400,
-    color: '#000000',
-    marginBottom: 20,
-  },
-  skillsContainer: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-  skillText: {
-    fontSize: 32,
-    color: '#000000',
-    marginBottom: 20,
-    fontFamily: 'Space Grotesk',
-    fontWeight: 400,
-  },
-  highlights: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 38,
-    paddingVertical: 38,
-  },
-  highlightsTitle: {
-    fontSize: 38,
+    fontSize: 52,
     fontFamily: 'Termina',
     fontWeight: 400,
     color: '#2237F1',
     marginBottom: 20,
   },
-  highlightRow: {
-    flexDirection: 'row',
-    marginBottom: 24,
+  skillsContainer: {
+    flexDirection: 'column',
+    gap: 10,
   },
-  bulletPoint: {
-    fontSize: 24,
-    color: '#2237f1',
-    marginRight: '2%',
+  skillText: {
+    fontSize: 44,
+    color: '#111827',
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
+    lineHeight: 1.2,
+  },
+  highlightsTitle: {
+    fontSize: 52,
+    fontFamily: 'Termina',
+    fontWeight: 400,
+    color: '#2237F1',
+    marginBottom: 20,
   },
   highlightText: {
-    fontSize: 24,
-    color: '#000000',
-    flex: 1,
+    fontSize: 32,
+    color: '#111827',
+    marginBottom: 10,
+    lineHeight: 1.2,
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
   },
+  actionsContainer: {
+    paddingHorizontal: 30,
+    paddingVertical: 20,
+  },
   buttonContainer: {
-    marginTop: '4%',
     flexDirection: 'row',
-    gap: 16,
+    width: '100%',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  primaryActionLink: {
+    width: 252,
+    fontSize: 20,
+    color: '#FFFFFF',
+    fontFamily: 'Space Grotesk',
+    fontWeight: 500,
+    backgroundColor: '#2237F1',
+    paddingVertical: 14,
+    textAlign: 'center',
+  },
+  secondaryActionLink: {
+    width: 252,
+    fontSize: 20,
+    color: '#111827',
+    fontFamily: 'Space Grotesk',
+    fontWeight: 500,
+    borderWidth: 1,
+    borderColor: '#9CA3AF',
+    paddingVertical: 14,
+    textAlign: 'center',
   },
 
 });
@@ -220,113 +238,73 @@ const formatUrl = (url) => {
   return cleanUrl;
 };
 
-const PDFProfileCard = ({ formData }) => {
+const PDFProfileCard = ({ formData, pdfVersion = 'redesign-v2' }) => {
   // Clean and format URLs at the component level
   const resumeUrl = formData.resumeLink ? ensureHttps(formData.resumeLink) : '';
   const portfolioUrl = formData.portfolioLink ? ensureHttps(formData.portfolioLink) : '';
-  const linkedinUrl = formData.linkedin ? ensureHttps(formData.linkedin) : '';
-
-  // Determine which buttons to render
-  const shouldRenderResumeButton = Boolean(formData.resumeLink && resumeUrl);
-  const shouldRenderPortfolioButton = Boolean(formData.portfolioLink && portfolioUrl);
-
-  // Create buttons array
-  const buttons = [];
-  if (shouldRenderResumeButton) {
-    buttons.push(
-      <Link key="resume" src={resumeUrl}>
-        <Image
-          src={getPdfAssetPath(ASSETS.buttons.resume)}
-          style={{ width: 160, height: 64 }}
-        />
-      </Link>
-    );
-  }
-  if (shouldRenderPortfolioButton) {
-    buttons.push(
-      <Link key="portfolio" src={portfolioUrl}>
-        <Image
-          src={getPdfAssetPath(ASSETS.buttons.portfolio)}
-          style={{ width: 160, height: 64 }}
-        />
-      </Link>
-    );
-  }
-
-  // Debug URL and asset handling
-  console.log('PDF Card Debug:', {
-    urls: {
-      original: {
-        resumeLink: formData.resumeLink,
-        portfolioLink: formData.portfolioLink,
-        linkedin: formData.linkedin
-      },
-      formatted: {
-        resumeUrl,
-        portfolioUrl,
-        linkedinUrl
-      }
-    },
-    buttonConditions: {
-      resumeButton: {
-        hasResumeLink: !!formData.resumeLink,
-        hasResumeUrl: !!resumeUrl,
-        shouldRender: shouldRenderResumeButton
-      },
-      portfolioButton: {
-        hasPortfolioLink: !!formData.portfolioLink,
-        hasPortfolioUrl: !!portfolioUrl,
-        shouldRender: shouldRenderPortfolioButton
-      }
-    },
-    assets: {
-      resumeButton: {
-        path: ASSETS.buttons.resume,
-        url: getAssetUrl(ASSETS.buttons.resume),
-        pdfPath: getPdfAssetPath(ASSETS.buttons.resume)
-      },
-      portfolioButton: {
-        path: ASSETS.buttons.portfolio,
-        url: getAssetUrl(ASSETS.buttons.portfolio),
-        pdfPath: getPdfAssetPath(ASSETS.buttons.portfolio)
-      }
-    }
-  });
 
   return (
     <Document>
       <Page 
         size={[TEMPLATE_WIDTH, TEMPLATE_HEIGHT]} 
         style={styles.page}
-        key={`${formData.resumeLink}-${formData.portfolioLink}`}
+        key={`${pdfVersion}-${formData.name}-${formData.resumeLink}-${formData.portfolioLink}`}
       >
-        {/* Status Pill */}
-        {formData.placementType && ASSETS.statusPills[formData.placementType] && (
-          <Image
-            src={getPdfAssetPath(ASSETS.statusPills[formData.placementType])}
-            style={styles.statusPill}
-          />
-        )}
-
-        {/* Profile Image */}
-        <View style={styles.profileImageContainer}>
-          {formData.profileImage && (
-            <Image
-              src={formData.profileImage}
-              style={styles.profileImage}
-              quality={100}
-              cache={false}
-            />
-          )}
+        <View style={styles.sidebar}>
+          <View style={styles.profileImageContainer}>
+            {formData.profileImage && (
+              <Image
+                src={formData.profileImage}
+                style={styles.profileImage}
+                quality={100}
+                cache={false}
+              />
+            )}
+          </View>
+          <View style={styles.actionsContainer}>
+            <View style={styles.buttonContainer}>
+              {resumeUrl && (
+                <Link src={resumeUrl}>
+                  <Text style={styles.primaryActionLink}>Download Resume</Text>
+                </Link>
+              )}
+              {portfolioUrl && (
+                <Link src={portfolioUrl}>
+                  <Text style={styles.secondaryActionLink}>Visit Portfolio</Text>
+                </Link>
+              )}
+              {!portfolioUrl && formData.linkedin && formData.linkedin.trim() && (
+                <Link src={formatUrl(formData.linkedin)}>
+                  <Text style={styles.secondaryActionLink}>LinkedIn Profile</Text>
+                </Link>
+              )}
+            </View>
+          </View>
+          <View style={styles.coreSkills}>
+            <Text style={styles.coreSkillsTitle}>Core Skills</Text>
+            <View style={styles.skillsContainer}>
+              {(formData.coreSkills || ['', '', '']).map((skill, index) => (
+                <Text key={index} style={styles.skillText}>
+                  {skill && skill.trim() ? `• ${skill}` : `• Skill ${index + 1}`}
+                </Text>
+              ))}
+            </View>
+          </View>
         </View>
 
         {/* Content Container */}
         <View style={styles.contentContainer}>
-          {/* Logo */}
-          <Image
-            src={getPdfAssetPath(ASSETS.logo)}
-            style={styles.logo}
-          />
+          <View style={styles.topRow}>
+            {formData.placementType && (
+              <View style={[styles.statusPill, { backgroundColor: '#F3F4F6' }]}>
+                <Text style={styles.statusPillText}>{formData.placementType}</Text>
+              </View>
+            )}
+            <Image
+              src={getPdfAssetPath(ASSETS.logo) || MWI_LOGO_FALLBACK_DATA_URI}
+              style={styles.logo}
+            />
+          </View>
 
           {/* Name */}
           <Text style={styles.name}>
@@ -336,37 +314,14 @@ const PDFProfileCard = ({ formData }) => {
           {/* Contact Info */}
           <ContactInfo formData={formData} />
 
-          {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
-            {buttons}
-          </View>
-        </View>
-
-        {/* Bottom Container */}
-        <View style={styles.bottomContainer}>
-          {/* Core Skills */}
-          <View style={styles.coreSkills}>
-            <Text style={styles.coreSkillsTitle}>Core Skills</Text>
-            <View style={styles.skillsContainer}>
-              {(formData.coreSkills || ['', '', '']).map((skill, index) => (
-                <Text key={index} style={styles.skillText}>
-                  {skill && skill.trim() ? skill : `Skill ${index + 1}`}
-                </Text>
-              ))}
-            </View>
-          </View>
-
-          {/* Key Highlights */}
+          {/* Highlights */}
           {formData.highlights && formData.highlights.some(h => h && h.trim()) && (
-            <View style={styles.highlights}>
-              <Text style={styles.highlightsTitle}>Key Highlights</Text>
+            <View style={styles.highlightContainer}>
+              <Text style={styles.highlightsTitle}>Highlights</Text>
               {formData.highlights
                 .filter(highlight => highlight && highlight.trim())
                 .map((highlight, index) => (
-                  <View key={index} style={styles.highlightRow}>
-                    <Text style={styles.bulletPoint}>•</Text>
-                    <Text style={styles.highlightText}>{highlight}</Text>
-                  </View>
+                  <Text key={index} style={styles.highlightText}>• {highlight}</Text>
                 ))}
             </View>
           )}
@@ -390,43 +345,38 @@ PDFProfileCard.propTypes = {
     profileImage: PropTypes.string,
     coreSkills: PropTypes.arrayOf(PropTypes.string),
     placementType: PropTypes.oneOf(['Contractor', 'Direct Placement', 'Contract to Hire'])
-  }).isRequired
+  }).isRequired,
+  pdfVersion: PropTypes.string
 };
 
 const ContactInfo = ({ formData }) => (
     <View style={styles.contactInfo}>
       {formData.position && formData.position.trim() && (
-        <View style={styles.contactRow}>
-          <Text style={styles.contactLabel}>Position:</Text>
-          <Text style={styles.contactValue}>{formData.position}</Text>
-        </View>
+        <Text style={styles.positionText}>{formData.position}</Text>
       )}
       {formData.address && formData.address.trim() && (
         <View style={styles.contactRow}>
-          <Text style={styles.contactLabel}>Location:</Text>
-          <Text style={styles.contactValue}>{formData.address}</Text>
-        </View>
-      )}
-      {formData.phone && formData.phone.trim() && (
-        <View style={styles.contactRow}>
-          <Text style={styles.contactLabel}>Phone Number:</Text>
-          <Text style={styles.contactValue}>{formData.phone}</Text>
+          <Image src={ICONS.location} style={styles.contactIcon} />
+          <Text style={styles.contactText}>{formData.address}</Text>
         </View>
       )}
       {formData.email && formData.email.trim() && (
         <View style={styles.contactRow}>
-          <Text style={styles.contactLabel}>Email:</Text>
-          <Text style={styles.contactValue}>{formData.email}</Text>
+          <Image src={ICONS.email} style={styles.contactIcon} />
+          <Text style={styles.contactText}>{formData.email}</Text>
+        </View>
+      )}
+      {formData.phone && formData.phone.trim() && (
+        <View style={styles.contactRow}>
+          <Image src={ICONS.phone} style={styles.contactIcon} />
+          <Text style={styles.contactText}>{formData.phone}</Text>
         </View>
       )}
       {formData.linkedin && formData.linkedin.trim() && (
         <View style={styles.contactRow}>
-          <Text style={styles.contactLabel}>LinkedIn Profile:</Text>
+          <Image src={ICONS.linkedin} style={styles.contactIcon} />
           <Link src={formatUrl(formData.linkedin)}>
-            <View style={styles.linkWrapper}>
-              <Text style={styles.linkText}>Visit Here</Text>
-              <View style={styles.underline} />
-            </View>
+            <Text style={styles.linkedinText}>LinkedIn Profile</Text>
           </Link>
         </View>
       )}

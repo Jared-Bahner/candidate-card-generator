@@ -58,7 +58,9 @@ describe('AI Service', () => {
         return pageNum === 1 ? mockPage1 : mockPage2;
       });
 
-      mockPdfJs.getDocument.mockResolvedValue(mockPdfDoc);
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.resolve(mockPdfDoc)
+      });
 
       const mockOpenAIInstance = {
         chat: {
@@ -107,7 +109,9 @@ describe('AI Service', () => {
     });
 
     it('handles PDF processing errors', async () => {
-      mockPdfJs.getDocument.mockRejectedValue(new Error('PDF processing failed'));
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.reject(new Error('PDF processing failed'))
+      });
 
       const pdfBuffer = new ArrayBuffer(8);
 
@@ -124,7 +128,9 @@ describe('AI Service', () => {
         })
       };
 
-      mockPdfJs.getDocument.mockResolvedValue(mockPdfDoc);
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.resolve(mockPdfDoc)
+      });
 
       const mockOpenAIInstance = {
         chat: {
@@ -151,7 +157,9 @@ describe('AI Service', () => {
         })
       };
 
-      mockPdfJs.getDocument.mockResolvedValue(mockPdfDoc);
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.resolve(mockPdfDoc)
+      });
 
       const mockOpenAIInstance = {
         chat: {
@@ -166,6 +174,60 @@ describe('AI Service', () => {
       const pdfBuffer = new ArrayBuffer(8);
 
       await expect(extractTextFromPDF(pdfBuffer)).rejects.toThrow('Our AI service is being upgraded. Please try again in a few minutes.');
+    });
+
+    it('sanitizes outbound resume text before OpenAI call', async () => {
+      const mockPdfDoc = {
+        numPages: 1,
+        getPage: vi.fn().mockResolvedValue({
+          getTextContent: vi.fn().mockResolvedValue({
+            items: [{ str: 'John Doe' }, { str: 'john@example.com' }, { str: '(555) 111-2222' }]
+          })
+        })
+      };
+
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.resolve(mockPdfDoc)
+      });
+
+      const mockOpenAIInstance = {
+        chat: {
+          completions: {
+            create: vi.fn().mockResolvedValue({
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    name: '[CANDIDATE_NAME]',
+                    position: 'Software Engineer',
+                    email: '[EMAIL_1]',
+                    phone: '[PHONE_1]',
+                    address: '',
+                    linkedin: '',
+                    resumeLink: '',
+                    coreSkills: ['React', 'Node.js', 'JavaScript'],
+                    highlights: ['Built internal tooling that improved deployment velocity by 30%.']
+                  })
+                }
+              }]
+            })
+          }
+        }
+      };
+
+      mockOpenAI.mockImplementation(() => mockOpenAIInstance);
+
+      const pdfBuffer = new ArrayBuffer(8);
+      const result = await extractTextFromPDF(pdfBuffer);
+      const payload = mockOpenAIInstance.chat.completions.create.mock.calls[0][0];
+      const outboundText = payload.messages[1].content;
+
+      expect(outboundText).not.toContain('john@example.com');
+      expect(outboundText).not.toContain('(555) 111-2222');
+      expect(outboundText).toContain('[EMAIL_1]');
+      expect(outboundText).toContain('[PHONE_1]');
+      expect(result.name).toBe('John Doe');
+      expect(result.email).toBe('john@example.com');
+      expect(result.phone).toContain('555');
     });
   });
 
@@ -205,7 +267,7 @@ Mentored 5 junior developers and conducted code reviews, resulting in improved c
           },
           {
             role: "user",
-            content: resumeText
+            content: expect.stringContaining('software engineer')
           }
         ],
         temperature: 0.7,
@@ -252,7 +314,7 @@ Implemented database optimization strategies.`
           },
           {
             role: "user",
-            content: resumeText
+            content: expect.stringContaining('Software engineer')
           }
         ],
         temperature: 0.7,
@@ -294,7 +356,7 @@ General highlight 2.`
           },
           {
             role: "user",
-            content: resumeText
+            content: expect.stringContaining('Software engineer')
           }
         ],
         temperature: 0.7,
@@ -399,6 +461,38 @@ Valid highlight 2.
       expect(result).toHaveLength(2);
       expect(result[0]).toBe('Valid highlight 1.');
       expect(result[1]).toBe('Valid highlight 2.');
+    });
+
+    it('sanitizes outbound highlight prompt resume payload', async () => {
+      const mockOpenAIInstance = {
+        chat: {
+          completions: {
+            create: vi.fn().mockResolvedValue({
+              choices: [{
+                message: {
+                  content: `Led modernization efforts that improved page load speeds by 45%.
+
+Collaborated across product and engineering to deliver measurable business outcomes.`
+                }
+              }]
+            })
+          }
+        }
+      };
+
+      mockOpenAI.mockImplementation(() => mockOpenAIInstance);
+
+      const resumeText = 'Contact me at jane@example.com or 415-222-3333.';
+      await generateHighlightsFromResume(resumeText, 'frontend');
+
+      const payload = mockOpenAIInstance.chat.completions.create.mock.calls[0][0];
+      const outboundText = payload.messages[1].content;
+
+      expect(outboundText).not.toContain('jane@example.com');
+      expect(outboundText).not.toContain('415-222-3333');
+      expect(outboundText).toContain('[EMAIL_1]');
+      expect(outboundText).toContain('[PHONE_1]');
+      expect(payload.messages[0].content).toContain('PRIVACY REQUIREMENTS');
     });
   });
 }); 
