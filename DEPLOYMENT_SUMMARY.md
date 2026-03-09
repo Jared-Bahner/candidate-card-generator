@@ -94,7 +94,7 @@ git subtree push --prefix dist origin gh-pages
 
 ### **Production Environment**
 ```env
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 VITE_APP_NAME=Candidate Card Generator
 VITE_APP_VERSION=1.0.0
 VITE_APP_ENV=production
@@ -149,7 +149,7 @@ VITE_SENTRY_DSN=your_sentry_dsn
 4. Monitor performance metrics
 
 ### **3. Future Enhancements**
-1. Backend API for secure API key management
+1. Add request-level rate limiting for `/api/*`
 2. User authentication and data persistence
 3. Advanced analytics and reporting
 4. Mobile app development

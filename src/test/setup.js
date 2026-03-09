@@ -1,9 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
-// Mock environment variables
-import.meta.env.VITE_OPENAI_API_KEY = 'test-api-key';
-
 // Mock localStorage with actual storage simulation
 const localStorageMock = {
   store: {},

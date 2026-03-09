@@ -31,8 +31,7 @@ export default defineConfig({
           manualChunks: {
             vendor: ['react', 'react-dom'],
             pdf: ['@react-pdf/renderer', 'pdfjs-dist'],
-            ui: ['lucide-react'],
-            utils: ['openai']
+            ui: ['lucide-react']
           }
         }
     },

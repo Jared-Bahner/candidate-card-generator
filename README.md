@@ -51,10 +51,11 @@ cp env.example .env.local
 Edit `.env.local` and add your OpenAI API key:
 
 ```env
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 VITE_APP_NAME=Candidate Card Generator
 VITE_APP_VERSION=1.0.0
 VITE_APP_ENV=development
+VITE_API_BASE_URL=
 ```
 
 ### 4. Start Development Server
@@ -88,7 +89,7 @@ npm run preview
 3. **Deploy**: Vercel will automatically build and deploy your application
 
 Required environment variables for production:
-- `VITE_OPENAI_API_KEY`: Your OpenAI API key
+- `OPENAI_API_KEY`: Your OpenAI API key (server-side only)
 - `VITE_APP_NAME`: Application name
 - `VITE_APP_VERSION`: Application version
 - `VITE_APP_ENV`: Set to "production"
@@ -139,13 +140,18 @@ src/
 │   ├── RecentCards.jsx  # Recent cards management
 │   └── ErrorBoundary.jsx # Error handling
 ├── services/           # External service integrations
-│   └── aiService.js    # OpenAI API integration
+│   └── aiService.js    # Frontend calls to backend AI endpoints
 ├── utils/              # Utility functions
 │   ├── storage.js      # Local storage management
 │   └── common.js       # Common utility functions
 ├── test/               # Test files
 ├── App.jsx             # Main application component
 └── main.jsx            # Application entry point
+
+api/
+├── parse-resume.js         # Serverless endpoint for structured resume parsing
+├── generate-highlights.js  # Serverless endpoint for highlights generation
+└── _openai.js              # OpenAI client and prompt builders
 ```
 
 ## 🔧 Configuration
@@ -175,8 +181,8 @@ Custom styling with Tailwind CSS including:
 
 ### API Security
 
-- OpenAI API calls are made client-side (requires `dangerouslyAllowBrowser: true`)
-- Consider implementing a backend proxy for production use
+- OpenAI API calls are made through Vercel serverless functions under `/api/*`
+- Keep `OPENAI_API_KEY` only in server/runtime environment variables
 - Rate limiting and error handling implemented
 
 ## 📊 Performance

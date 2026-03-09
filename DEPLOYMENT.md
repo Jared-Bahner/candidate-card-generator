@@ -5,7 +5,7 @@ This guide provides step-by-step instructions for deploying the Candidate Card G
 ## 🚀 Pre-Deployment Checklist
 
 ### ✅ Environment Variables
-- [ ] `VITE_OPENAI_API_KEY` is set and valid
+- [ ] `OPENAI_API_KEY` is set and valid
 - [ ] `VITE_APP_NAME` is configured
 - [ ] `VITE_APP_VERSION` is set
 - [ ] `VITE_APP_ENV` is set to "production"
@@ -82,7 +82,7 @@ vercel --prod
 
 #### Environment Variables in Vercel
 ```bash
-vercel env add VITE_OPENAI_API_KEY
+vercel env add OPENAI_API_KEY
 vercel env add VITE_APP_NAME
 vercel env add VITE_APP_VERSION
 vercel env add VITE_APP_ENV
