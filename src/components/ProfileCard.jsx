@@ -57,7 +57,7 @@ const KeyHighlights = ({ highlights }) => {
 
   return (
     <div>
-      <h4 className="text-[52px] font-semibold mb-[2.5%] font-termina" style={{ color: '#2237F1' }}>Highlights</h4>
+      <h4 className="text-[44px] font-semibold mb-[1.8%] font-termina" style={{ color: '#2237F1' }}>Highlights</h4>
       <div className="space-y-[1.4%]">
         {highlights
           .filter(highlight => highlight.trim())
@@ -108,33 +108,33 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
 );
 
 const ContactInfo = ({ formData }) => (
-  <div className="space-y-[2%]">
+  <div className="space-y-[1.2%]">
     {formData.position && (
-      <div className="text-[50px] leading-[1.1]" style={{ color: '#2237F1' }}>
+      <div className="text-[40px] leading-[1.1]" style={{ color: '#2237F1' }}>
         <span>{formData.position}</span>
       </div>
     )}
     {formData.address && (
-      <div className="flex items-center text-[42px] text-[#111827] leading-[1.2]">
-        <MapPin className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
+      <div className="flex items-center text-[34px] text-[#111827] leading-[1.2]">
+        <MapPin className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
         <span>{formData.address}</span>
       </div>
     )}
     {formData.email && (
-      <div className="text-[42px] text-[#111827] flex items-center leading-[1.2]">
-        <Mail className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
+      <div className="text-[34px] text-[#111827] flex items-center leading-[1.2]">
+        <Mail className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
         <span>{formData.email}</span>
       </div>
     )}
     {formData.phone && (
-      <div className="text-[42px] text-[#111827] flex items-center leading-[1.2]">
-        <Phone className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
+      <div className="text-[34px] text-[#111827] flex items-center leading-[1.2]">
+        <Phone className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
         <span>{formData.phone}</span>
       </div>
     )}
     {formData.linkedin && (
-      <div className="text-[42px] text-[#111827] flex items-center" data-pdf-link>
-        <Linkedin className="w-[38px] h-[38px] mr-[1.6%] text-[#6b7280]" />
+      <div className="text-[34px] text-[#111827] flex items-center" data-pdf-link>
+        <Linkedin className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
         <a 
           href={ensureHttps(formData.linkedin)}
           target="_blank"
@@ -217,7 +217,7 @@ export default function ProfileCard({ formData }) {
 
         <ContactInfo formData={formData} />
 
-        <div className="mt-[4%] pt-[3%] border-t border-[#e5e7eb]">
+        <div className="mt-[2.5%] pt-[2%] border-t border-[#e5e7eb]">
           <KeyHighlights highlights={formData.highlights} />
         </div>
 
