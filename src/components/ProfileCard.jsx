@@ -79,9 +79,9 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
         href={ensureHttps(resumeLink)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] bg-[#2237F1] text-white text-[15px] hover:bg-[#1a2bd8] transition-colors"
+        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] bg-[#2237F1] text-white text-[17px] hover:bg-[#1a2bd8] transition-colors"
       >
-        Download Resume
+        View Resume
       </a>
     )}
     {portfolioLink && (
@@ -99,7 +99,7 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
         href={ensureHttps(linkedin)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[15px] hover:bg-[#f3f4f6] transition-colors"
+        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[17px] hover:bg-[#f3f4f6] transition-colors"
       >
         LinkedIn Profile
       </a>
@@ -116,8 +116,8 @@ const ContactInfo = ({ formData }) => (
     )}
     {formData.address && (
       <div className="flex items-center text-[34px] text-[#111827] leading-[1.2]">
-        <MapPin className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
-        <span>{formData.address}</span>
+        <MapPin className="w-[30px] h-[30px] mr-[1.4%] shrink-0 text-[#6b7280]" />
+        <span className="shrink-0" style={{ whiteSpace: 'nowrap' }}>{formData.address}</span>
       </div>
     )}
     {formData.email && (
