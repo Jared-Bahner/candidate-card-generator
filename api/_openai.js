@@ -17,7 +17,7 @@ export function buildResumeParserPrompt() {
           - phone
           - address (full address if available)
           - linkedin (LinkedIn URL if found)
-          - resumeLink (any other portfolio or resume links)
+          - resumeLink (single string: one portfolio or resume URL if found; otherwise "")
           - coreSkills (array of 3 most important technical skills)
           - highlights (array of 5-7 detailed achievements/experiences, each 2-3 sentences long, focusing on quantifiable results and impact)
 

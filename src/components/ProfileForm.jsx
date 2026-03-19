@@ -3,6 +3,21 @@ import PropTypes from 'prop-types';
 import { Upload, User, Star, FileText, Loader, Wrench, Briefcase } from 'lucide-react';
 import { extractTextFromPDF, generateHighlightsFromResume } from '../services/aiService';
 
+/** Coerce parser output to one trimmed string (models may return arrays for link fields). */
+function normalizeParsedString(value) {
+  if (value == null || value === false) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value).trim();
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const s = normalizeParsedString(item);
+      if (s) return s;
+    }
+    return '';
+  }
+  return '';
+}
+
 // Memoized form components for better performance
 const FormSection = React.memo(({ children, className = '' }) => (
   <div className={`mb-4 ${className}`}>
@@ -199,31 +214,22 @@ export default function ProfileForm({
       // Only update fields that have meaningful data from AI parsing
       const updates = {};
       
-      // Only update fields if they have non-empty values from AI
-      if (parsedData.name && parsedData.name.trim()) {
-        updates.name = parsedData.name.trim();
-      }
-      if (parsedData.position && parsedData.position.trim()) {
-        updates.position = parsedData.position.trim();
-      }
-      if (parsedData.email && parsedData.email.trim()) {
-        updates.email = parsedData.email.trim();
-      }
-      if (parsedData.phone && parsedData.phone.trim()) {
-        updates.phone = parsedData.phone.trim();
-      }
-      if (parsedData.address && parsedData.address.trim()) {
-        updates.address = parsedData.address.trim();
-      }
-      if (parsedData.linkedin && parsedData.linkedin.trim()) {
-        updates.linkedin = parsedData.linkedin.trim();
-      }
-      if (parsedData.resumeLink && parsedData.resumeLink.trim()) {
-        updates.resumeLink = parsedData.resumeLink.trim();
-      }
-      if (parsedData.portfolioLink && parsedData.portfolioLink.trim()) {
-        updates.portfolioLink = parsedData.portfolioLink.trim();
-      }
+      const name = normalizeParsedString(parsedData.name);
+      if (name) updates.name = name;
+      const position = normalizeParsedString(parsedData.position);
+      if (position) updates.position = position;
+      const email = normalizeParsedString(parsedData.email);
+      if (email) updates.email = email;
+      const phone = normalizeParsedString(parsedData.phone);
+      if (phone) updates.phone = phone;
+      const address = normalizeParsedString(parsedData.address);
+      if (address) updates.address = address;
+      const linkedin = normalizeParsedString(parsedData.linkedin);
+      if (linkedin) updates.linkedin = linkedin;
+      const resumeLink = normalizeParsedString(parsedData.resumeLink);
+      if (resumeLink) updates.resumeLink = resumeLink;
+      const portfolioLink = normalizeParsedString(parsedData.portfolioLink);
+      if (portfolioLink) updates.portfolioLink = portfolioLink;
 
       // Apply only meaningful updates
       Object.entries(updates).forEach(([field, value]) => {
