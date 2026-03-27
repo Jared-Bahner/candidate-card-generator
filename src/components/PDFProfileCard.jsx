@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 68,
     paddingTop: 46,
-    paddingBottom: 36,
+    paddingBottom: 20,
   },
   topRow: {
     flexDirection: 'row',
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Space Grotesk',
     fontWeight: 400,
     lineHeight: 1.2,
+    marginBottom: 5,
   },
   contactRow: {
     flexDirection: 'row',
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     textDecoration: 'underline',
   },
   highlightContainer: {
-    marginTop: 14,
+    marginTop: 24,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',

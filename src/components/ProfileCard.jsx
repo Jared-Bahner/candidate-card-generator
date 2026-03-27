@@ -157,7 +157,7 @@ const contactIconStyle = {
 const ContactInfo = ({ formData }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
     {formData.position && (
-      <div style={{ fontSize: '40px', lineHeight: '44px', color: '#2237F1' }}>
+      <div style={{ fontSize: '40px', lineHeight: '44px', color: '#2237F1', marginBottom: '5px' }}>
         {formData.position}
       </div>
     )}
@@ -241,7 +241,7 @@ export default function ProfileCard({ formData }) {
       </div>
 
       {/* Content Container */}
-      <div className="absolute left-[31.6%] top-0 right-0 bottom-0 px-[3.5%] pt-[4%] pb-[3%]">
+      <div className="absolute left-[31.6%] top-0 right-0 bottom-0 px-[3.5%] pt-[4%] pb-[1.5%]">
         <div className="flex items-start justify-between mb-[2.2%]">
           <StatusPill type={formData.placementType} />
           <img 
@@ -262,7 +262,7 @@ export default function ProfileCard({ formData }) {
 
         <ContactInfo formData={formData} />
 
-        <div className="mt-[2.5%] pt-[2%] border-t border-[#e5e7eb]">
+        <div className="mt-[3.5%] pt-[2%] border-t border-[#e5e7eb]">
           <KeyHighlights highlights={formData.highlights} />
         </div>
 
