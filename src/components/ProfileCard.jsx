@@ -4,22 +4,25 @@ import PropTypes from 'prop-types';
 import { ensureHttps } from '../utils/common';
 import { MWI_LOGO_FALLBACK_DATA_URI, MWI_LOGO_PRIMARY_SRC } from '../utils/mwiLogo';
 
+const PILL_SVGS = {
+  contractor: '/assets/contractor-pill.svg',
+  'direct placement': '/assets/direct-placement-pill.svg',
+  'contract to hire': '/assets/contract-to-hire-pill.svg'
+};
+
 const StatusPill = ({ type }) => {
   if (!type) return null;
 
-  const badgeClasses = {
-    contractor: 'bg-[#2563eb] text-white',
-    'direct placement': 'bg-[#0f766e] text-white',
-    'contract to hire': 'bg-[#7c3aed] text-white'
-  };
-
   const normalizedType = type.toLowerCase();
-  const badgeClass = badgeClasses[normalizedType] || 'bg-[#1f2937] text-white';
+  const src = PILL_SVGS[normalizedType];
+  if (!src) return null;
 
   return (
-    <div className={`px-5 py-2 rounded-[6px] text-[24px] font-medium tracking-wide flex items-center justify-center text-center ${badgeClass}`}>
-      {type}
-    </div>
+    <img
+      src={src}
+      alt={type}
+      style={{ height: '52px', width: 'auto' }}
+    />
   );
 };
 

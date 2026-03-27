@@ -104,7 +104,7 @@ export const exportProfileCardToPdf = async ({
     useCORS: true,
     allowTaint: false,
     logging: false,
-    foreignObjectRendering: true,
+    foreignObjectRendering: false,
     removeContainer: true,
     width: TEMPLATE_WIDTH,
     height: TEMPLATE_HEIGHT,
