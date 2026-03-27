@@ -75,14 +75,29 @@ const KeyHighlights = ({ highlights }) => {
   );
 };
 
+const buttonBaseStyle = {
+  flex: 1,
+  height: '52px',
+  lineHeight: '52px',
+  textAlign: 'center',
+  borderRadius: '2px',
+  textDecoration: 'none',
+  whiteSpace: 'nowrap',
+};
+
 const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
-  <div className="flex gap-4">
+  <div style={{ display: 'flex', gap: '16px' }}>
     {resumeLink && (
       <a
         href={ensureHttps(resumeLink)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] bg-[#2237F1] text-white text-[17px] hover:bg-[#1a2bd8] transition-colors"
+        style={{
+          ...buttonBaseStyle,
+          backgroundColor: '#2237F1',
+          color: '#ffffff',
+          fontSize: '17px',
+        }}
       >
         View Resume
       </a>
@@ -92,7 +107,13 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
         href={ensureHttps(portfolioLink)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[15px] hover:bg-[#f3f4f6] transition-colors"
+        style={{
+          ...buttonBaseStyle,
+          backgroundColor: '#ffffff',
+          color: '#111827',
+          fontSize: '15px',
+          border: '1px solid #9ca3af',
+        }}
       >
         Visit Portfolio
       </a>
@@ -102,7 +123,13 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
         href={ensureHttps(linkedin)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-1 h-[52px] inline-flex items-center justify-center rounded-[2px] border border-[#9ca3af] text-[#111827] text-[17px] hover:bg-[#f3f4f6] transition-colors"
+        style={{
+          ...buttonBaseStyle,
+          backgroundColor: '#ffffff',
+          color: '#111827',
+          fontSize: '17px',
+          border: '1px solid #9ca3af',
+        }}
       >
         LinkedIn Profile
       </a>
@@ -110,46 +137,61 @@ const ActionButtons = ({ resumeLink, portfolioLink, linkedin }) => (
   </div>
 );
 
+const contactRowStyle = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  fontSize: '34px',
+  lineHeight: '40px',
+  color: '#111827',
+};
+
+const contactIconStyle = {
+  width: '30px',
+  height: '30px',
+  marginRight: '18px',
+  flexShrink: 0,
+  color: '#6b7280',
+};
+
 const ContactInfo = ({ formData }) => (
-  <div className="space-y-[1.2%]">
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
     {formData.position && (
-      <div className="text-[40px] leading-[1.1]" style={{ color: '#2237F1' }}>
-        <span>{formData.position}</span>
+      <div style={{ fontSize: '40px', lineHeight: '44px', color: '#2237F1' }}>
+        {formData.position}
       </div>
     )}
     {formData.address && (
-      <div className="flex items-center text-[34px] text-[#111827] leading-[1.2]">
-        <MapPin className="w-[30px] h-[30px] mr-[1.4%] shrink-0 text-[#6b7280]" />
-        <span className="shrink-0" style={{ whiteSpace: 'nowrap' }}>{formData.address}</span>
+      <div style={contactRowStyle}>
+        <MapPin style={contactIconStyle} />
+        <span style={{ whiteSpace: 'nowrap' }}>{formData.address}</span>
       </div>
     )}
     {formData.email && (
-      <div className="text-[34px] text-[#111827] flex items-center leading-[1.2]">
-        <Mail className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
+      <div style={contactRowStyle}>
+        <Mail style={contactIconStyle} />
         <span>{formData.email}</span>
       </div>
     )}
     {formData.phone && (
-      <div className="text-[34px] text-[#111827] flex items-center leading-[1.2]">
-        <Phone className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
+      <div style={contactRowStyle}>
+        <Phone style={contactIconStyle} />
         <span>{formData.phone}</span>
       </div>
     )}
     {formData.linkedin && (
-      <div className="text-[34px] text-[#111827] flex items-center" data-pdf-link>
-        <Linkedin className="w-[30px] h-[30px] mr-[1.4%] text-[#6b7280]" />
-        <a 
+      <div style={contactRowStyle} data-pdf-link>
+        <Linkedin style={contactIconStyle} />
+        <a
           href={ensureHttps(formData.linkedin)}
           target="_blank"
           rel="noopener noreferrer"
           style={{
             color: '#2237F1',
             textDecoration: 'underline',
-            cursor: 'pointer',
             textDecorationThickness: '2px',
-            textUnderlineOffset: '2px'
+            textUnderlineOffset: '2px',
           }}
-          className="hover:bg-blue-500/10 transition-colors rounded px-1"
           data-pdf-link-url={ensureHttps(formData.linkedin)}
         >
           LinkedIn Profile

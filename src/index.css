@@ -5,8 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Local font imports — these take priority over the Google Fonts CDN import
-   and ensure html2canvas can resolve fonts during PDF export. */
+/* Local font imports — these take priority over the Google Fonts CDN import. */
 @font-face {
   font-family: 'Space Grotesk';
   src: url('/fonts/SpaceGrotesk-Regular.otf') format('opentype');

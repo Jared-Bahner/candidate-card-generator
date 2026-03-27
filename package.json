@@ -40,8 +40,6 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.3.0",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^4.2.0",
     "lucide-react": "^0.511.0",
     "openai": "^5.0.1",
     "pdfjs-dist": "^4.0.379",

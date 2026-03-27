@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Download } from 'lucide-react';
 import ProfileForm from './components/ProfileForm';
 import ProfileCard from './components/ProfileCard';
@@ -8,7 +8,6 @@ import { saveRecentCard, getRecentCards, clearRecentCards } from './utils/storag
 import { exportProfileCardToPdf } from './utils/pdfExport';
 import { MWI_LOGO_FALLBACK_DATA_URI, MWI_LOGO_PRIMARY_SRC } from './utils/mwiLogo';
 
-// Constants
 const TEMPLATE_WIDTH = 1920;
 const TEMPLATE_HEIGHT = 1080;
 
@@ -34,7 +33,6 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const containerRef = useRef(null);
-  const exportCardRef = useRef(null);
 
   useEffect(() => {
     const updateScaleFactor = () => {
@@ -174,12 +172,7 @@ function AppContent() {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!exportCardRef.current) {
-      alert('Preview is not ready for export yet. Please try again.');
-      return;
-    }
-
+  const handleExportPDF = useCallback(async () => {
     try {
       setIsExporting(true);
       const safeFileName = (formData.name || 'candidate')
@@ -189,7 +182,7 @@ function AppContent() {
         .replace(/(^-|-$)/g, '');
 
       await exportProfileCardToPdf({
-        element: exportCardRef.current,
+        formData,
         fileName: `${safeFileName || 'candidate'}-card.pdf`
       });
     } catch (error) {
@@ -198,7 +191,7 @@ function AppContent() {
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [formData]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -300,28 +293,6 @@ function AppContent() {
         </footer>
       </div>
 
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed top-0 left-0"
-        style={{
-          width: `${TEMPLATE_WIDTH}px`,
-          height: `${TEMPLATE_HEIGHT}px`,
-          overflow: 'hidden',
-          opacity: 0,
-          zIndex: -1
-        }}
-      >
-        <div
-          ref={exportCardRef}
-          style={{
-            width: `${TEMPLATE_WIDTH}px`,
-            height: `${TEMPLATE_HEIGHT}px`,
-            backgroundColor: '#FFFFFF'
-          }}
-        >
-          <ProfileCard formData={formData} />
-        </div>
-      </div>
     </div>
   );
 }

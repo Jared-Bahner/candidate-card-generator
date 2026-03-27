@@ -255,7 +255,7 @@ describe('App Component', () => {
     expect(saveButton).not.toBeDisabled();
   });
 
-  it('exports PDF using DOM-based export utility', async () => {
+  it('exports PDF using react-pdf export utility', async () => {
     const user = userEvent.setup();
     const { exportProfileCardToPdf } = await import('../utils/pdfExport');
     render(<App />);
@@ -271,7 +271,7 @@ describe('App Component', () => {
     });
     expect(exportProfileCardToPdf).toHaveBeenCalledWith(
       expect.objectContaining({
-        element: expect.any(HTMLElement),
+        formData: expect.objectContaining({ name: 'John Doe' }),
         fileName: 'john-doe-card.pdf'
       })
     );
