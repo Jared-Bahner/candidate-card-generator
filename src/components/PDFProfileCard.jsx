@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 82,
     fontFamily: 'Termina',
-    fontWeight: 400,
+    fontWeight: 700,
     color: '#111827',
     marginBottom: 12,
   },
   contactInfo: {
     marginBottom: 16,
     flexDirection: 'column',
-    gap: 7,
+    gap: 14,
   },
   contactText: {
     fontSize: 34,
@@ -181,13 +181,13 @@ const styles = StyleSheet.create({
   coreSkillsTitle: {
     fontSize: 52,
     fontFamily: 'Termina',
-    fontWeight: 400,
+    fontWeight: 700,
     color: '#2237F1',
     marginBottom: 20,
   },
-  skillsContainer: {
+    skillsContainer: {
     flexDirection: 'column',
-    gap: 10,
+    gap: 18,
   },
   skillText: {
     fontSize: 44,
@@ -199,14 +199,14 @@ const styles = StyleSheet.create({
   highlightsTitle: {
     fontSize: 44,
     fontFamily: 'Termina',
-    fontWeight: 400,
+    fontWeight: 700,
     color: '#2237F1',
     marginBottom: 14,
   },
   highlightText: {
     fontSize: 32,
     color: '#111827',
-    marginBottom: 10,
+    marginBottom: 18,
     lineHeight: 1.2,
     fontFamily: 'Space Grotesk',
     fontWeight: 400,

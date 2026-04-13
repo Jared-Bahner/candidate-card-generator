@@ -45,7 +45,7 @@ const ProfileImage = ({ src }) => (
 const CoreSkills = ({ skills = ['', '', ''] }) => (
   <div className="px-[8%] pt-[8%] pb-[6%] flex-1">
     <h4 className="text-[52px] font-semibold mb-[4%] font-termina" style={{ color: '#2237F1' }}>Core Skills</h4>
-    <div className="space-y-[2.5%]">
+    <div className="space-y-[4%]">
       {skills.map((skill, index) => (
         <div key={index} className="text-[44px] text-[#111827] leading-[1.2]">
           {skill?.trim() ? `• ${skill}` : `• Skill ${index + 1}`}
@@ -61,7 +61,7 @@ const KeyHighlights = ({ highlights }) => {
   return (
     <div>
       <h4 className="text-[44px] font-semibold mb-[1.8%] font-termina" style={{ color: '#2237F1' }}>Highlights</h4>
-      <div className="space-y-[1.4%]">
+      <div className="space-y-[2.5%]">
         {highlights
           .filter(highlight => highlight.trim())
           .map((highlight, index) => (
@@ -155,7 +155,7 @@ const contactIconStyle = {
 };
 
 const ContactInfo = ({ formData }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
     {formData.position && (
       <div style={{ fontSize: '40px', lineHeight: '44px', color: '#2237F1', marginBottom: '5px' }}>
         {formData.position}
