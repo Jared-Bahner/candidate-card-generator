@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ProfileForm from '../components/ProfileForm';
@@ -7,7 +7,8 @@ import ProfileForm from '../components/ProfileForm';
 // Mock the AI service
 vi.mock('../services/aiService', () => ({
   extractTextFromPDF: vi.fn(),
-  generateHighlightsFromResume: vi.fn()
+  generateHighlightsFromResume: vi.fn(),
+  NO_TEXT_LAYER_ERROR: 'NO_TEXT_LAYER_ERROR'
 }));
 
 // Mock the common utils
@@ -70,8 +71,7 @@ describe('ProfileForm Component', () => {
     expect(screen.getByTestId('image-upload')).toBeInTheDocument();
   });
 
-  it('handles input changes', async () => {
-    const user = userEvent.setup();
+  it('handles input changes', () => {
     render(
       <ProfileForm
         formData={mockFormData}
@@ -79,8 +79,12 @@ describe('ProfileForm Component', () => {
       />
     );
 
+    // Use fireEvent.change so the assertion sees the full value in a single
+    // onChange call. user.type() would emit one onChange per keystroke, and
+    // because the mock handler doesn't update formData, React resets the
+    // controlled input back to '' between strokes.
     const nameInput = screen.getByTestId('name-input');
-    await user.type(nameInput, 'John Doe');
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
 
     expect(mockHandlers.onInputChange).toHaveBeenCalledWith('name', 'John Doe');
   });
@@ -100,8 +104,7 @@ describe('ProfileForm Component', () => {
     expect(mockHandlers.onInputChange).toHaveBeenCalledWith('placementType', 'Direct Placement');
   });
 
-  it('handles core skill changes', async () => {
-    const user = userEvent.setup();
+  it('handles core skill changes', () => {
     render(
       <ProfileForm
         formData={mockFormData}
@@ -110,13 +113,12 @@ describe('ProfileForm Component', () => {
     );
 
     const skillInputs = screen.getAllByPlaceholderText(/Core Skill/);
-    await user.type(skillInputs[0], 'React');
+    fireEvent.change(skillInputs[0], { target: { value: 'React' } });
 
     expect(mockHandlers.onInputChange).toHaveBeenCalledWith('coreSkills', ['React', '', '']);
   });
 
-  it('handles highlight changes', async () => {
-    const user = userEvent.setup();
+  it('handles highlight changes', () => {
     render(
       <ProfileForm
         formData={mockFormData}
@@ -125,7 +127,7 @@ describe('ProfileForm Component', () => {
     );
 
     const highlightTextarea = screen.getByPlaceholderText('Enter a key highlight');
-    await user.type(highlightTextarea, 'New highlight');
+    fireEvent.change(highlightTextarea, { target: { value: 'New highlight' } });
 
     expect(mockHandlers.onHighlightChange).toHaveBeenCalledWith(0, 'New highlight');
   });
@@ -210,7 +212,10 @@ describe('ProfileForm Component', () => {
   });
 
   it('rejects non-PDF files', async () => {
-    const user = userEvent.setup();
+    // The input has accept=".pdf"; userEvent's default applyAccept would
+    // silently drop the .txt file before our handler runs, preventing the
+    // in-handler rejection path from being exercised.
+    const user = userEvent.setup({ applyAccept: false });
     render(
       <ProfileForm
         formData={mockFormData}
@@ -220,7 +225,7 @@ describe('ProfileForm Component', () => {
 
     const resumeUpload = screen.getByTestId('resume-upload');
     const file = new File(['test'], 'test.txt', { type: 'text/plain' });
-    
+
     await user.upload(resumeUpload, file);
 
     await waitFor(() => {
@@ -295,10 +300,26 @@ describe('ProfileForm Component', () => {
     });
   });
 
+  // Helper: upload a fake PDF so the component captures uploadedResumeText,
+  // which is required to enable the "Generate" context-highlights button.
+  const uploadResume = async (user) => {
+    const { extractTextFromPDF } = await import('../services/aiService');
+    extractTextFromPDF.mockResolvedValue({
+      name: 'John Doe',
+      fullText: 'Resume text content'
+    });
+    const resumeUpload = screen.getByTestId('resume-upload');
+    const file = new File(['test'], 'test.pdf', { type: 'application/pdf' });
+    await user.upload(resumeUpload, file);
+    await waitFor(() => {
+      expect(extractTextFromPDF).toHaveBeenCalled();
+    });
+  };
+
   it('generates context-based highlights', async () => {
     const user = userEvent.setup();
     const { generateHighlightsFromResume } = await import('../services/aiService');
-    
+
     generateHighlightsFromResume.mockResolvedValue([
       'Suggested highlight 1',
       'Suggested highlight 2'
@@ -311,16 +332,18 @@ describe('ProfileForm Component', () => {
       />
     );
 
-    const contextInput = screen.getByTestId('context-input');
-    const generateButton = screen.getByTestId('generate-button');
+    await uploadResume(user);
 
-    await user.type(contextInput, 'React development');
+    const contextInput = screen.getByTestId('context-input');
+    fireEvent.change(contextInput, { target: { value: 'React development' } });
+
+    const generateButton = screen.getByTestId('generate-button');
     await user.click(generateButton);
 
     await waitFor(() => {
       expect(screen.getByTestId('suggested-highlights')).toBeInTheDocument();
     });
-    
+
     expect(screen.getByText('Suggested highlight 1')).toBeInTheDocument();
     expect(screen.getByText('Suggested highlight 2')).toBeInTheDocument();
   });
@@ -328,7 +351,7 @@ describe('ProfileForm Component', () => {
   it('adds suggested highlights when clicked', async () => {
     const user = userEvent.setup();
     const { generateHighlightsFromResume } = await import('../services/aiService');
-    
+
     generateHighlightsFromResume.mockResolvedValue([
       'Suggested highlight 1'
     ]);
@@ -340,16 +363,18 @@ describe('ProfileForm Component', () => {
       />
     );
 
-    const contextInput = screen.getByTestId('context-input');
-    const generateButton = screen.getByTestId('generate-button');
+    await uploadResume(user);
 
-    await user.type(contextInput, 'React development');
+    const contextInput = screen.getByTestId('context-input');
+    fireEvent.change(contextInput, { target: { value: 'React development' } });
+
+    const generateButton = screen.getByTestId('generate-button');
     await user.click(generateButton);
 
     await waitFor(() => {
       expect(screen.getByTestId('suggested-highlights')).toBeInTheDocument();
     });
-    
+
     const addButton = screen.getByText('Add');
     await user.click(addButton);
 

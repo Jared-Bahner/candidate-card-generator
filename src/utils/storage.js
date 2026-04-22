@@ -16,6 +16,14 @@ const sanitizeCardDataForStorage = (cardData = {}) => {
   );
 };
 
+// Generate a unique ID even when multiple cards are saved within the same
+// millisecond (Date.now() alone collides in tight loops/tests).
+let cardIdCounter = 0;
+const generateCardId = () => {
+  cardIdCounter = (cardIdCounter + 1) % Number.MAX_SAFE_INTEGER;
+  return `${Date.now()}-${cardIdCounter}`;
+};
+
 /**
  * Save a card to recent cards in local storage
  * @param {Object} cardData - The form data to save
@@ -27,7 +35,7 @@ export const saveRecentCard = (cardData) => {
     
     // Create new card entry
     const newCard = {
-      id: Date.now().toString(),
+      id: generateCardId(),
       data: sanitizeCardDataForStorage(cardData),
       timestamp: Date.now()
     };

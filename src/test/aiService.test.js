@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { extractTextFromPDF, generateHighlightsFromResume } from '../services/aiService';
+import {
+  extractTextFromPDF,
+  generateHighlightsFromResume,
+  NO_TEXT_LAYER_ERROR
+} from '../services/aiService';
 
 vi.mock('pdfjs-dist', () => ({
   GlobalWorkerOptions: {
@@ -74,12 +78,36 @@ describe('AI Service', () => {
       expect(result.fullText).toContain('John Doe');
     });
 
+    it('throws a clear error for image-only PDFs with no text layer', async () => {
+      // Simulate an image-only PDF (e.g. "Microsoft Print to PDF" output or
+      // iLovePDF-compressed scan): pages exist but getTextContent returns no items.
+      mockPdfJs.getDocument.mockReturnValue({
+        promise: Promise.resolve({
+          numPages: 2,
+          getPage: vi.fn().mockResolvedValue({
+            getTextContent: vi.fn().mockResolvedValue({ items: [] })
+          })
+        })
+      });
+
+      await expect(extractTextFromPDF(new ArrayBuffer(8))).rejects.toThrow(
+        NO_TEXT_LAYER_ERROR
+      );
+      // Must not call the parser endpoint when there's nothing to parse.
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     it('surfaces parser endpoint errors', async () => {
       mockPdfJs.getDocument.mockReturnValue({
         promise: Promise.resolve({
           numPages: 1,
           getPage: vi.fn().mockResolvedValue({
-            getTextContent: vi.fn().mockResolvedValue({ items: [{ str: 'Test' }] })
+            getTextContent: vi.fn().mockResolvedValue({
+              items: [
+                { str: 'Jane Doe Senior Software Engineer' },
+                { str: 'jane@example.com React Node.js AWS' }
+              ]
+            })
           })
         })
       });

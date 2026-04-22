@@ -6,7 +6,8 @@ import App from '../App';
 // Mock the AI service
 vi.mock('../services/aiService', () => ({
   extractTextFromPDF: vi.fn(),
-  generateHighlightsFromResume: vi.fn()
+  generateHighlightsFromResume: vi.fn(),
+  NO_TEXT_LAYER_ERROR: 'NO_TEXT_LAYER_ERROR'
 }));
 
 // Mock pdfjs-dist

@@ -1,7 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, User, Star, FileText, Loader, Wrench, Briefcase } from 'lucide-react';
-import { extractTextFromPDF, generateHighlightsFromResume } from '../services/aiService';
+import {
+  extractTextFromPDF,
+  generateHighlightsFromResume,
+  NO_TEXT_LAYER_ERROR
+} from '../services/aiService';
 
 /** Coerce parser output to one trimmed string (models may return arrays for link fields). */
 function normalizeParsedString(value) {
@@ -32,23 +36,25 @@ const FormLabel = React.memo(({ children, icon: Icon }) => (
   </label>
 ));
 
-const FormInput = React.memo(({ type = 'text', value, onChange, placeholder, className = '' }) => (
+const FormInput = React.memo(({ type = 'text', value, onChange, placeholder, className = '', ...rest }) => (
   <input
     type={type}
     value={value || ''}
     onChange={onChange}
     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2237f1] ${className}`}
     placeholder={placeholder}
+    {...rest}
   />
 ));
 
-const FormTextArea = React.memo(({ value, onChange, placeholder, rows = 2 }) => (
+const FormTextArea = React.memo(({ value, onChange, placeholder, rows = 2, className = '', ...rest }) => (
   <textarea
     value={value || ''}
     onChange={onChange}
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2237f1]"
+    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2237f1] ${className}`}
     rows={rows}
     placeholder={placeholder}
+    {...rest}
   />
 ));
 
@@ -254,8 +260,9 @@ export default function ProfileForm({
       });
     } catch (err) {
       console.error('Detailed error in handleResumeUpload:', err);
-      updateLocalState({ 
-        error: `Failed to process resume: ${err.message}` 
+      const isNoTextLayer = err.message === NO_TEXT_LAYER_ERROR;
+      updateLocalState({
+        error: isNoTextLayer ? err.message : `Failed to process resume: ${err.message}`
       });
     } finally {
       updateLocalState({ isProcessing: false });

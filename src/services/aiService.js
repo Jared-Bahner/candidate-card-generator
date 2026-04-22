@@ -11,6 +11,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
+// Shown when a PDF has no extractable text layer (scanned/image-only or printed
+// via "Microsoft Print to PDF"). The message is displayed verbatim in the UI.
+export const NO_TEXT_LAYER_ERROR =
+  'This PDF has no readable text — it looks like a scanned or image-only file ' +
+  '(common with Windows "Microsoft Print to PDF" or PDF compressors like iLovePDF). ' +
+  'Please re-export the resume directly from Google Docs or Word ' +
+  '(File → Download / Save As → PDF) and upload that version instead.';
+
 async function postToServer(path, payload) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
@@ -58,6 +66,13 @@ export async function extractTextFromPDF(pdfBuffer) {
       fullText += pageText + '\n\n';
     }
 
+    // Guard against image-only PDFs (no text layer). Real resumes extract
+    // hundreds-to-thousands of characters; anything under a small threshold
+    // is effectively empty and can't be parsed by the model.
+    if (fullText.trim().length < 20) {
+      throw new Error(NO_TEXT_LAYER_ERROR);
+    }
+
     const { sanitizedText, placeholderMap } = sanitizeTextForLLM(fullText);
 
     const response = await postToServer('/api/parse-resume', { sanitizedText });
@@ -71,6 +86,9 @@ export async function extractTextFromPDF(pdfBuffer) {
     };
   } catch (error) {
     console.error('Error processing PDF:', error);
+    if (error.message === NO_TEXT_LAYER_ERROR) {
+      throw error;
+    }
     if (error.message && error.message.includes('has been deprecated')) {
       throw new Error('Our AI service is being upgraded. Please try again in a few minutes.');
     }
